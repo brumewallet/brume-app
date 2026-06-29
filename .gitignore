@@ -65,3 +65,6 @@ web-ext-artifacts/
 docs
 # Added by code-review-graph
 .code-review-graph/
+
+# Claude Code skills (local tooling, not product code)
+.claude/skills/
