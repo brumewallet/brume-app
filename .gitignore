@@ -68,3 +68,13 @@ docs
 
 # Claude Code skills (local tooling, not product code)
 .claude/skills/
+
+# Vendored solana-labs/token-list: only the JSON data (src/tokens) is used via
+# the @token-list path alias. Its upstream dev tooling is never installed or
+# built, so don't track its manifest/lockfile (pulls ~71 Dependabot alerts).
+wallet/token-list/yarn.lock
+wallet/token-list/package.json
+
+# Vestigial: the wallet is installed via the root pnpm workspace lockfile, so
+# this nested lockfile is ignored by pnpm and only stale (pulls ~34 alerts).
+wallet/pnpm-lock.yaml
