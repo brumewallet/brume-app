@@ -1,93 +1,87 @@
 import type { Config } from "tailwindcss";
 
-// Brume marketing + app theme. Semantic tokens mirror Material-style names; brume-* for API routes.
 const config: Config = {
   darkMode: "class",
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        background: "#121318",
-        surface: "#121318",
-        "surface-dim": "#121318",
-        "surface-container-lowest": "#0d0e13",
-        "surface-container-low": "#1a1b21",
-        "surface-container": "#1e1f25",
-        "surface-container-high": "#292a2f",
-        "surface-container-highest": "#34343a",
-        "surface-variant": "#34343a",
-        "surface-bright": "#38393f",
-        primary: "#c7bfff",
-        "primary-container": "#8e7fff",
-        "primary-fixed": "#e4dfff",
-        "primary-fixed-dim": "#c7bfff",
-        "on-primary": "#2a039d",
-        "on-primary-container": "#24008c",
-        "on-primary-fixed": "#170065",
-        "on-primary-fixed-variant": "#422db2",
-        secondary: "#4ddcc6",
-        "secondary-container": "#00b4a0",
-        "secondary-fixed": "#6ef9e2",
-        "secondary-fixed-dim": "#4ddcc6",
-        "on-secondary": "#003730",
-        "on-secondary-container": "#003f37",
-        "on-secondary-fixed": "#00201b",
-        "on-secondary-fixed-variant": "#005047",
-        tertiary: "#d9c58b",
-        "tertiary-container": "#bcaa72",
-        "tertiary-fixed": "#f6e1a5",
-        "tertiary-fixed-dim": "#d9c58b",
-        "on-tertiary": "#3b2f04",
-        "on-tertiary-container": "#4b3e11",
-        "on-tertiary-fixed": "#231b00",
-        "on-tertiary-fixed-variant": "#534618",
-        "on-surface": "#e3e1e9",
-        "on-surface-variant": "#c8c4d6",
-        "on-background": "#e3e1e9",
-        outline: "#928f9f",
-        "outline-variant": "#474554",
-        error: "#ffb4ab",
-        "error-container": "#93000a",
-        "on-error": "#690005",
-        "on-error-container": "#ffdad6",
-        "inverse-surface": "#e3e1e9",
-        "inverse-on-surface": "#2f3036",
-        "inverse-primary": "#5a49cb",
-        "surface-tint": "#c7bfff",
-        brume: {
-          void: "#050506",
-          mist: "#0c0d12",
-          frost: "#13151c",
-          line: "rgba(255, 255, 255, 0.08)",
-          accent: "#8b7cff",
-          "accent-dim": "#6d5fd6",
-          mint: "#5eead4",
-          sun: "#f5e0a4",
+        navy: {
+          50: "#F2F1F8",
+          100: "#E5E2F0",
+          200: "#C7C1E0",
+          300: "#A099C8",
+          400: "#6C6597",
+          500: "#423878",
+          600: "#322663",
+          700: "#2B1F6B",
+          800: "#271B69",
+          900: "#191243",
+          950: "#0D0925",
+          DEFAULT: "#271B69",
         },
-      },
-      borderRadius: {
-        DEFAULT: "1rem",
-        lg: "2rem",
-        xl: "3rem",
+        ube: {
+          50: "#F7F5FF",
+          100: "#EFEBFE",
+          200: "#E0DAFE",
+          300: "#CCC4FD",
+          400: "#AFA2FC",
+          500: "#9A86F6",
+          600: "#7E66EC",
+          DEFAULT: "#AFA2FC",
+        },
+        ink: "#191243",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        headline: ["var(--font-display)", "Georgia", "serif"],
-        body: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
-      backgroundImage: {
-        "mist-radial":
-          "radial-gradient(ellipse 80% 60% at 50% -20%, rgba(139, 124, 255, 0.22), transparent 55%)",
-        "glow-radial":
-          "radial-gradient(circle at 80% 20%, rgba(94, 234, 212, 0.12), transparent 45%)",
-        "hero-glow":
-          "radial-gradient(circle at 50% 50%, rgba(139, 124, 255, 0.12) 0%, transparent 70%)",
+      borderRadius: {
+        "4xl": "2rem",
+        "5xl": "2.75rem",
+      },
+      letterSpacing: {
+        tightest: "-0.03em",
       },
       boxShadow: {
-        card: "0 0 0 1px rgba(255,255,255,0.06), 0 24px 80px -32px rgba(0,0,0,0.85)",
-        lift: "0 12px 40px -20px rgba(139, 124, 255, 0.35)",
-        nav: "0 8px 32px rgba(139,124,255,0.06)",
+        glass:
+          "0 1px 0 0 rgba(255,255,255,0.9) inset, 0 24px 60px -26px rgba(13,9,37,0.28), 0 6px 18px -10px rgba(13,9,37,0.16)",
+        "glass-lift":
+          "0 1px 0 0 rgba(255,255,255,0.95) inset, 0 40px 90px -34px rgba(13,9,37,0.32), 0 10px 28px -16px rgba(13,9,37,0.18)",
+        primary: "0 14px 34px -14px rgba(39,27,105,0.55)",
+        accent: "0 14px 36px -14px rgba(175,162,252,0.55)",
+      },
+      backgroundImage: {
+        "brume-mesh":
+          "radial-gradient(60% 55% at 16% 6%, rgba(255,255,255,0.95) 0%, transparent 60%)," +
+          "radial-gradient(52% 48% at 86% 0%, rgba(175,162,252,0.32) 0%, transparent 58%)," +
+          "radial-gradient(55% 52% at 92% 90%, rgba(204,196,253,0.30) 0%, transparent 60%)," +
+          "radial-gradient(60% 58% at 6% 100%, rgba(39,27,105,0.10) 0%, transparent 62%)",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        drift: {
+          "0%": { transform: "translate3d(0,0,0) scale(1)" },
+          "50%": { transform: "translate3d(2%,-2.5%,0) scale(1.06)" },
+          "100%": { transform: "translate3d(0,0,0) scale(1)" },
+        },
+        "drift-slow": {
+          "0%": { transform: "translate3d(0,0,0) scale(1.05)" },
+          "50%": { transform: "translate3d(-3%,2%,0) scale(1)" },
+          "100%": { transform: "translate3d(0,0,0) scale(1.05)" },
+        },
+      },
+      animation: {
+        float: "float 7s ease-in-out infinite",
+        drift: "drift 24s ease-in-out infinite",
+        "drift-slow": "drift-slow 32s ease-in-out infinite",
       },
     },
   },

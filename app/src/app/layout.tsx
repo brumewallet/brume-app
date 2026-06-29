@@ -1,50 +1,37 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Instrument_Serif } from "next/font/google";
+import { Cal_Sans, Onest } from "next/font/google";
 import "./globals.css";
 
-const display = Instrument_Serif({
+const display = Cal_Sans({
   subsets: ["latin"],
+  display: "swap",
+  weight: "400",
   variable: "--font-display",
-  weight: ["400"],
-  style: ["normal", "italic"],
-  display: "swap",
 });
 
-const sans = DM_Sans({
+const sans = Onest({
   subsets: ["latin"],
-  variable: "--font-sans",
   display: "swap",
+  weight: ["400", "600"],
+  variable: "--font-sans",
 });
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-};
 
 export const metadata: Metadata = {
-  title: {
-    default: "Brume | Sovereignty through silence",
-    template: "%s · Brume",
-  },
-  description:
-    "Brume is a Solana wallet with privacy by default: shielded transfers, governed agentic wallets, and modular add-ons. brume.cash",
   metadataBase: new URL("https://brume.cash"),
+  title: "Brume: Public is the feature you opt into",
+  description:
+    "A privacy-first Solana wallet. Shielded transfers and policy-bound agents, built into the core, not bolted on. Sovereignty through silence.",
   openGraph: {
-    title: "Brume | Sovereignty through silence",
+    title: "Brume: Public is the feature you opt into",
     description:
-      "Shield by default. Governed agents. Public is the feature you opt into.",
-    url: "https://brume.cash",
+      "A privacy-first Solana wallet. Shielded transfers and policy-bound agents, built into the core.",
     siteName: "Brume",
-    locale: "en_US",
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Brume | Sovereignty through silence",
-    description:
-      "Shield by default. Governed agents. Modular add-ons on private rails.",
-  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({
@@ -53,8 +40,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${display.variable} ${sans.variable}`}>
-      <body className="selection-brume font-sans">{children}</body>
+    <html
+      lang="en"
+      className={`${display.variable} ${sans.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.classList.add('js')",
+          }}
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
