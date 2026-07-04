@@ -75,7 +75,7 @@ function Nav() {
 function WalletCard() {
   return (
     <div>
-      <div className="glass relative w-full max-w-sm rounded-[1.75rem] p-6">
+      <div className="glass hairline relative w-full max-w-sm rounded-[1.75rem] p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-navy-900 text-white">
@@ -183,7 +183,7 @@ export default function Home() {
                   </a>
                   <a
                     href="#features"
-                    className="press inline-flex items-center justify-center rounded-full glass px-7 py-3.5 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-white/80"
+                    className="press inline-flex items-center justify-center rounded-full glass hairline px-7 py-3.5 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-white/80"
                   >
                     Explore features
                   </a>
@@ -200,7 +200,7 @@ export default function Home() {
 
         <section className="mx-auto max-w-6xl px-5 sm:px-6">
           <Reveal>
-            <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-4xl glass md:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-4xl glass hairline md:grid-cols-4">
               {TRUST.map((label) => (
                 <li
                   key={label}
@@ -230,7 +230,7 @@ export default function Home() {
 
           <div className="mt-12 grid gap-4 md:grid-cols-3 md:auto-rows-[minmax(0,1fr)]">
             <Reveal className="md:col-span-2 md:row-span-2">
-              <article className="relative flex h-full flex-col justify-between overflow-hidden rounded-[1.75rem] glass p-8 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-glass-lift sm:p-10">
+              <article className="relative flex h-full flex-col justify-between overflow-hidden rounded-[1.75rem] glass hairline p-8 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-glass-lift sm:p-10">
                 <div className="relative z-10 max-w-md">
                   <span className="font-display text-2xl tracking-tightest text-ube-400">
                     01
@@ -263,7 +263,7 @@ export default function Home() {
             </Reveal>
 
             <Reveal delay={80}>
-              <article className="flex h-full flex-col rounded-[1.75rem] glass p-7">
+              <article className="flex h-full flex-col rounded-[1.75rem] glass hairline p-7">
                 <span className="font-display text-xl tracking-tightest text-ube-400">
                   02
                 </span>
@@ -284,7 +284,7 @@ export default function Home() {
             </Reveal>
 
             <Reveal delay={160}>
-              <article className="flex h-full flex-col rounded-[1.75rem] glass p-7">
+              <article className="flex h-full flex-col rounded-[1.75rem] glass hairline p-7">
                 <span className="font-display text-xl tracking-tightest text-ube-400">
                   03
                 </span>
@@ -324,7 +324,7 @@ export default function Home() {
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {GOVERNORS.map(({ title, body }, i) => (
               <Reveal key={title} delay={i * 70}>
-                <article className="flex h-full flex-col rounded-[1.75rem] glass p-7 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-glass-lift">
+                <article className="flex h-full flex-col rounded-[1.75rem] glass hairline p-7 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-glass-lift">
                   <span className="font-display text-xl tracking-tightest text-ube-400">
                     {String(i + 1).padStart(2, "0")}
                   </span>
@@ -352,7 +352,7 @@ export default function Home() {
           className="mx-auto max-w-6xl px-5 pt-28 sm:px-6 sm:pt-36"
         >
           <Reveal>
-            <div className="flex flex-col gap-6 rounded-[1.75rem] glass p-8 sm:p-10 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-6 rounded-[1.75rem] glass hairline p-8 sm:p-10 md:flex-row md:items-center md:justify-between">
               <div className="max-w-md">
                 <h2 className="font-display text-2xl tracking-tightest text-ink sm:text-3xl">
                   Same rails, more modules
