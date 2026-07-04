@@ -74,8 +74,8 @@ function Nav() {
 
 function WalletCard() {
   return (
-    <div className="animate-float">
-      <div className="glass relative w-full max-w-sm rounded-[1.75rem] p-6 shadow-glass-lift">
+    <div>
+      <div className="glass relative w-full max-w-sm rounded-[1.75rem] p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-navy-900 text-white">
