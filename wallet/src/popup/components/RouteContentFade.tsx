@@ -2,17 +2,17 @@ import { motion } from "motion/react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Matches extension wallet-app layer transitions (Material-style ease). */
-const extEase = [0.4, 0, 0.2, 1] as const;
+/** Brume spring easing — matches loyal-app / web app motion system. */
+const brumeSpring = [0.32, 0.72, 0, 1] as const;
 
 export const routeContentTransition = {
-  duration: 0.3,
-  ease: extEase,
+  duration: 0.35,
+  ease: brumeSpring,
 } as const;
 
 const routeContentTransitionFade = {
-  duration: 0.25,
-  ease: extEase,
+  duration: 0.28,
+  ease: brumeSpring,
 } as const;
 
 export type RouteContentVariant =

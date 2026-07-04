@@ -1,6 +1,11 @@
 export function SeedPhraseGrid({ words }: { words: string[] }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div
+      className="grid grid-cols-3 gap-2"
+      onCopy={(e) => e.preventDefault()}
+      onCut={(e) => e.preventDefault()}
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
+    >
       {words.map((w, i) => (
         <div
           key={`${i}-${w}`}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { ArrowDownUp, ChevronRight } from "lucide-react";
 import type { PortfolioTokenRow } from "@brume/shared";
 import {
@@ -19,7 +20,6 @@ import { formatTokenListAmount, cn } from "@/lib/utils";
 import { SOL_WRAPPED_MINT, isShieldFeatureEnabled } from "@/shared/constants";
 import { BrumeIcon } from "../components/BrumeIcon";
 import { PrivateLegAvatarBadge } from "../components/PrivateLegAvatarBadge";
-import type { TokenRowNavState } from "../components/TokenRow";
 import { useJupiterPortfolioPrices } from "../context/JupiterPortfolioPrices";
 import { scheduleWalletStateRefresh } from "../lib/schedule-wallet-state-refresh";
 import { sortPortfolioTokensByBalanceDesc } from "../lib/sort-portfolio-by-balance";
@@ -166,7 +166,7 @@ function TokenSelectorPill(props: {
       disabled={disabled}
       onClick={onOpen}
       className={cn(
-        "flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card py-1 pl-1.5 pr-2 transition-[transform,colors] hover:bg-secondary active:scale-[0.98]",
+        "flex shrink-0 items-center gap-2 rounded-2xl border border-border/60 bg-card py-1 pl-1.5 pr-2 transition-[transform,colors] hover:bg-secondary active:scale-[0.98]",
         disabled && "pointer-events-none opacity-45",
       )}
       aria-label={`Select token, current ${symbol}`}
@@ -211,11 +211,7 @@ export function Shield() {
   const [tokenSearch, setTokenSearch] = useState("");
 
   useEffect(() => {
-    const s = location.state as TokenRowNavState | null;
-    const m = s?.shieldTokenMint?.trim();
-    if (!m || m.length < 32) return;
-    setTokenChoice(m);
-    if (s?.shieldInitialMode) setMode(s.shieldInitialMode);
+    void location;
   }, [location.state]);
 
   useEffect(() => {
@@ -428,8 +424,13 @@ export function Shield() {
 
   if (!isShieldFeatureEnabled(state.network)) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-24 pt-6">
-        <h1 className="text-base font-semibold">Shield</h1>
+      <motion.div
+        className="flex min-h-0 flex-1 flex-col px-4 pb-24 pt-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 22 }}
+      >
+        <h1 className="text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>Shield</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Private balance (shield / unshield) is only supported on Solana Devnet
           for now. Switch network in Settings to use it.
@@ -437,24 +438,29 @@ export function Shield() {
         <Button
           type="button"
           variant="secondary"
-          className="mt-6 w-full max-w-xs rounded-xl"
+          className="mt-6 w-full max-w-xs rounded-2xl"
           onClick={() => navigate("/settings")}
         >
           Open Settings
         </Button>
-      </div>
+      </motion.div>
     );
   }
 
   if (tokens.length === 0) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-24 pt-6">
-        <h1 className="text-base font-semibold">Shield</h1>
+      <motion.div
+        className="flex min-h-0 flex-1 flex-col px-4 pb-24 pt-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 22 }}
+      >
+        <h1 className="text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>Shield</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           No tokens in your portfolio yet. Receive or buy SPL tokens first, then
           you can shield them here.
         </p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -467,15 +473,20 @@ export function Shield() {
   const inputDisabled = busy || capRaw <= 0n;
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+    <motion.div
+      className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <header className="flex items-start justify-between px-5 pt-4">
-        <h1 className="text-[18px] font-semibold leading-7 text-foreground">
+        <h1 className="text-[18px] font-semibold leading-7 text-foreground" style={{ fontFamily: "var(--font-display)" }}>
           Shield
         </h1>
         <Link
           to="/"
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground transition-colors hover:bg-secondary/80",
+            "flex size-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground transition-colors hover:bg-secondary/80",
           )}
           aria-label="Close"
         >
@@ -512,7 +523,7 @@ export function Shield() {
               <span className="text-[16px] leading-5 text-muted-foreground">
                 {mode === "shield" ? "You shield" : "You unshield"}
               </span>
-              <div className="flex items-center gap-4 text-[14px] leading-5 text-[color:var(--extension-accent)]">
+              <div className="flex items-center gap-4 text-[14px] leading-5 text-primary">
                 {(
                   [
                     { label: "25%", fn: () => applyPct(25) },
@@ -524,7 +535,7 @@ export function Shield() {
                     key={label}
                     type="button"
                     disabled={pctDisabled}
-                    className="bg-transparent p-0 text-[14px] font-normal text-[color:var(--extension-accent)] transition-opacity hover:opacity-70 disabled:opacity-40"
+                    className="bg-transparent p-0 text-[14px] font-normal text-primary transition-opacity hover:opacity-70 disabled:opacity-40"
                     onClick={() => fn()}
                   >
                     {label}
@@ -632,7 +643,7 @@ export function Shield() {
         <Button
           type="button"
           size="lg"
-          className="h-12 w-full rounded-full text-[15px] font-normal"
+          className="h-12 w-full rounded-2xl text-[15px] font-normal"
           disabled={primaryDisabled}
           onClick={() => void onSubmit()}
         >
@@ -662,7 +673,7 @@ export function Shield() {
                 className="shrink-0 text-muted-foreground brume-chevron-bounce"
               />
               <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-secondary ring-1 ring-border">
-                <ShieldSolidIcon className="h-9 w-9 text-[color:var(--extension-accent)]" />
+                <ShieldSolidIcon className="h-9 w-9 text-primary" />
               </div>
             </div>
             <p className="text-center text-xl font-semibold text-foreground">
@@ -674,7 +685,7 @@ export function Shield() {
               type="button"
               size="lg"
               disabled
-              className="h-12 w-full rounded-full bg-[var(--btn-disabled)] text-[15px] font-normal text-white opacity-100"
+              className="h-12 w-full rounded-2xl bg-[var(--btn-disabled)] text-[15px] font-normal text-white opacity-100"
             >
               In progress…
             </Button>
@@ -773,6 +784,6 @@ export function Shield() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-    </div>
+    </motion.div>
   );
 }

@@ -104,6 +104,15 @@ export function createCloseAccountInstruction(
 
 // SPL Token `TransferChecked` (instruction 12).
 
+// SyncNative (ix 17): syncs the lamport balance of a wSOL ATA into its token amount.
+export function createSyncNativeInstruction(account: PublicKey): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: TOKEN_PROGRAM_ID,
+    data: Buffer.from([17]),
+    keys: [{ pubkey: account, isSigner: false, isWritable: true }],
+  });
+}
+
 export function createTransferCheckedInstruction(
   source: PublicKey,
   mint: PublicKey,

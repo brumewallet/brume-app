@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { SecurityCheckIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { BrumeIcon } from "../components/BrumeIcon";
 import { TxPreview } from "../components/TxPreview";
 import * as msg from "../messaging";
@@ -42,36 +42,39 @@ export function ApproveSign() {
   if (!p) return null;
 
   return (
-    <div className="flex min-h-[600px] flex-col gap-4 bg-background p-6">
+    <motion.div
+      className="flex min-h-[600px] flex-col gap-4 bg-background p-6"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary ring-1 ring-primary/25">
           <BrumeIcon icon={SecurityCheckIcon} size={28} />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-foreground">
+          <h1 className="text-xl font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
             Confirm transaction
           </h1>
           <p className="break-all text-[11px] text-muted-foreground">{p.origin}</p>
         </div>
       </div>
-      <Card size="sm" className="py-4">
-        <CardContent className="px-4 pt-0">
-          {p.kind === "transaction" && p.serializedTransaction && (
-            <TxPreview serializedBase64={p.serializedTransaction} />
-          )}
-          {p.kind === "allTransactions" && (
-            <p className="text-xs text-muted-foreground">
-              Batch of {p.serializedTransactions?.length ?? 0} transactions —
-              approve only if you trust this site.
-            </p>
-          )}
-          {p.kind === "message" && (
-            <p className="text-xs text-muted-foreground">
-              Sign message request — used for authentication by some apps.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-4">
+        {p.kind === "transaction" && p.serializedTransaction && (
+          <TxPreview serializedBase64={p.serializedTransaction} />
+        )}
+        {p.kind === "allTransactions" && (
+          <p className="text-xs text-muted-foreground">
+            Batch of {p.serializedTransactions?.length ?? 0} transactions.
+            Approve only if you trust this site.
+          </p>
+        )}
+        {p.kind === "message" && (
+          <p className="text-xs text-muted-foreground">
+            Sign message request. Used for authentication by some apps.
+          </p>
+        )}
+      </div>
       <p className="text-[11px] text-amber-400/90">
         Review carefully. Simulation is limited in v1.
       </p>
@@ -94,6 +97,6 @@ export function ApproveSign() {
           Sign
         </Button>
       </div>
-    </div>
+    </motion.div>
   );
 }

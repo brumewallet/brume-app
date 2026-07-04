@@ -234,6 +234,42 @@ export function burnSpl(mint: string, amount: string) {
   });
 }
 
+export function wrapSol(amountSol: string) {
+  const requestId = crypto.randomUUID();
+  return sendMessage<{ signature: string }>({
+    type: "WRAP_SOL",
+    requestId,
+    payload: { amountSol },
+  });
+}
+
+export function unwrapSol() {
+  const requestId = crypto.randomUUID();
+  return sendMessage<{ signature: string }>({
+    type: "UNWRAP_SOL",
+    requestId,
+    payload: {} as Record<string, never>,
+  });
+}
+
+export function getNfts(refresh = false) {
+  const requestId = crypto.randomUUID();
+  return sendMessage<{ nfts: import("@/background/api-client").NftItem[]; cached?: boolean; cachedAt?: number }>({
+    type: "GET_NFTS",
+    requestId,
+    payload: { refresh },
+  });
+}
+
+export function burnNft(mint: string, collection: string | null, standard: "mpl-core" | "legacy" | "programmable") {
+  const requestId = crypto.randomUUID();
+  return sendMessage<{ signature: string }>({
+    type: "BURN_NFT",
+    requestId,
+    payload: { mint, collection, standard },
+  });
+}
+
 export function getShieldBalances(mint: string) {
   const requestId = crypto.randomUUID();
   return sendMessage<{

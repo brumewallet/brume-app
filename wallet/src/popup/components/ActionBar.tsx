@@ -1,26 +1,10 @@
-import { ClockOutlineIcon, ReceiveIcon, SendButtonIcon, ShieldIcon } from "@/components/Icons";
+import { motion } from "motion/react";
+import { ClockOutlineIcon, NFTOutlineIcon, ReceiveIcon, SendButtonIcon } from "@/components/Icons";
 import { cn } from "@/lib/utils";
-import { isShieldFeatureEnabled } from "@/shared/constants";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useWalletStore } from "../store";
 
-function ActionCircle(props: { children: ReactNode }) {
-  return (
-    <span
-      className={cn(
-        "flex size-12 shrink-0 items-center justify-center rounded-full transition-[transform,background-color]",
-        "bg-[rgba(249,54,60,0.14)] hover:bg-[rgba(3, 3, 3, 0.22)]",
-        "dark:bg-white/10 dark:hover:bg-white/14 dark:ring-1 dark:ring-[rgba(249,54,60,0.35)]",
-        "active:scale-[0.93]",
-      )}
-    >
-      <span className="text-foreground [&_svg]:text-foreground dark:[&_svg]:text-[color:var(--extension-accent)]">
-        {props.children}
-      </span>
-    </span>
-  );
-}
+const tileSpring = { type: "spring", stiffness: 260, damping: 20 } as const;
 
 function Tile(props: {
   to?: string;
@@ -30,64 +14,40 @@ function Tile(props: {
   disabled?: boolean;
 }) {
   const inner = (
-    <>
-      <ActionCircle>{props.icon}</ActionCircle>
-      <span className="text-[13px] leading-4 text-foreground">
+    <motion.span
+      className={cn(
+        "flex flex-col items-center justify-center gap-2 px-2 py-2",
+        props.disabled ? "opacity-35" : "",
+      )}
+      whileTap={props.disabled ? {} : { scale: 0.93 }}
+      transition={tileSpring}
+    >
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-primary">
+        {props.icon}
+      </span>
+      <span className="text-[12px] font-medium leading-none text-foreground/80">
         {props.label}
       </span>
-    </>
+    </motion.span>
   );
 
-  const base =
-    "flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden bg-transparent p-0 text-center";
-
-  if (props.disabled) {
-    return (
-      <button type="button" disabled className={cn(base, "opacity-40")}>
-        {inner}
-      </button>
-    );
-  }
-  if (props.to) {
-    return (
-      <Link to={props.to} className={cn(base, "cursor-pointer")}>
-        {inner}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" className={cn(base, "cursor-pointer")} onClick={props.onClick}>
-      {inner}
-    </button>
-  );
+  if (props.disabled) return <span className="flex flex-1">{inner}</span>;
+  if (props.to) return <Link to={props.to} className="flex flex-1">{inner}</Link>;
+  return <button type="button" className="flex flex-1" onClick={props.onClick}>{inner}</button>;
 }
 
 export function ActionBar() {
-  const { state } = useWalletStore();
-  const shieldEnabled = isShieldFeatureEnabled(state?.network ?? "devnet");
   return (
-    <div className="grid grid-cols-4 gap-2 px-1 pt-1">
-      <Tile
-        to="/send"
-        icon={<SendButtonIcon />}
-        label="Send"
-      />
-      <Tile
-        to="/receive"
-        icon={<ReceiveIcon />}
-        label="Receive"
-      />
-      <Tile
-        to={shieldEnabled ? "/shield" : undefined}
-        disabled={!shieldEnabled}
-        icon={<ShieldIcon />}
-        label="Shield"
-      />
-      <Tile
-        to="/activity"
-        icon={<ClockOutlineIcon />}
-        label="Activity"
-      />
-    </div>
+    <motion.div
+      className="grid grid-cols-4 gap-2 px-1 pt-1"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22, delay: 0.08 }}
+    >
+      <Tile to="/send" icon={<SendButtonIcon />} label="Send" />
+      <Tile to="/receive" icon={<ReceiveIcon />} label="Receive" />
+      <Tile to="/nfts" icon={<NFTOutlineIcon />} label="NFTs" />
+      <Tile to="/activity" icon={<ClockOutlineIcon />} label="Activity" />
+    </motion.div>
   );
 }

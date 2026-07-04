@@ -1,10 +1,12 @@
 import type { NetworkId } from "@/shared/constants";
 import type { PortfolioTokenRow } from "@brume/shared";
+import type { NftItem } from "./api-client";
 
 const BALANCE_PREFIX = "brume_cache_balance_v1";
 const ACTIVITY_PREFIX = "brume_cache_activity_v4";
 const PORTFOLIO_PREFIX = "brume_cache_portfolio_v1";
 const SHIELD_BALANCES_PREFIX = "brume_cache_shield_balances_v1";
+const NFT_PREFIX = "brume_cache_nfts_v1";
 
 function kBalance(network: NetworkId, address: string): string {
   return `${BALANCE_PREFIX}:${network}:${address}`;
@@ -20,6 +22,10 @@ function kPortfolio(network: NetworkId, address: string): string {
 
 function kShieldBalances(network: NetworkId, address: string): string {
   return `${SHIELD_BALANCES_PREFIX}:${network}:${address}`;
+}
+
+function kNfts(network: NetworkId, address: string): string {
+  return `${NFT_PREFIX}:${network}:${address}`;
 }
 
 export async function readBalanceCache(
@@ -125,6 +131,30 @@ export async function writePortfolioCache(
 ): Promise<void> {
   await chrome.storage.local.set({
     [kPortfolio(network, address)]: { t: Date.now(), tokens },
+  });
+}
+
+export const NFT_CACHE_TTL_MS = 5 * 60 * 1000;
+
+export async function readNftCache(
+  network: NetworkId,
+  address: string,
+): Promise<{ nfts: NftItem[]; cachedAt: number } | null> {
+  const key = kNfts(network, address);
+  const raw = await chrome.storage.local.get(key);
+  const row = raw[key] as { nfts?: NftItem[]; t?: number } | undefined;
+  if (!row || !Array.isArray(row.nfts) || typeof row.t !== "number") return null;
+  if (Date.now() - row.t > NFT_CACHE_TTL_MS) return null;
+  return { nfts: row.nfts, cachedAt: row.t };
+}
+
+export async function writeNftCache(
+  network: NetworkId,
+  address: string,
+  nfts: NftItem[],
+): Promise<void> {
+  await chrome.storage.local.set({
+    [kNfts(network, address)]: { t: Date.now(), nfts },
   });
 }
 

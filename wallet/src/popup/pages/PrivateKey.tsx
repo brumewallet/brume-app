@@ -64,7 +64,12 @@ export function PrivateKey() {
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col gap-4 bg-background px-4 pb-24 pt-4">
+    <motion.div
+      className="flex min-h-full flex-1 flex-col gap-4 bg-background px-4 pb-24 pt-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <div className="flex items-center gap-2">
         <Link
           to={`/accounts/${encodeURIComponent(acc.id)}/edit`}
@@ -76,16 +81,16 @@ export function PrivateKey() {
         >
           <ArrowLeftIcon className="size-[22px]" />
         </Link>
-        <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground">
+        <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
           Your Private Key
         </h1>
       </div>
 
-      <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 py-3.5 text-center">
-        <p className="text-[15px] font-bold leading-snug text-rose-700">
-          Do <u>not</u> share your Private Key!
+      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3.5 text-center">
+        <p className="text-[15px] font-bold leading-snug text-amber-600 dark:text-amber-400">
+          Do not share your Private Key
         </p>
-        <p className="mt-2 text-xs font-normal leading-relaxed text-rose-700/80">
+        <p className="mt-2 text-xs font-normal leading-relaxed text-amber-600/80 dark:text-amber-400/80">
           If someone has your Private Key they will have full control of your
           wallet.
         </p>
@@ -137,7 +142,7 @@ export function PrivateKey() {
                 onClick={() => void copySecret()}
               >
                 {copied ? (
-                  <Check className="h-5 w-5 text-[#34C759]" strokeWidth={2} />
+                  <Check className="h-5 w-5 text-[color:var(--extension-success)]" strokeWidth={2} />
                 ) : (
                   <CopyIcon className="size-5" />
                 )}
@@ -152,7 +157,7 @@ export function PrivateKey() {
       <Button
         type="button"
         variant="secondary"
-        className="mt-auto h-12 w-full rounded-full text-[15px] font-medium"
+        className="mt-auto h-12 w-full rounded-2xl text-[15px] font-medium"
         onClick={() =>
           navigate(`/accounts/${encodeURIComponent(acc.id)}/edit`, {
             replace: true,
@@ -161,6 +166,6 @@ export function PrivateKey() {
       >
         Done
       </Button>
-    </div>
+    </motion.div>
   );
 }

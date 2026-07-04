@@ -257,7 +257,7 @@ export function SendSpl() {
                       </span>
                       <button
                         type="button"
-                        className="shrink-0 text-xs font-normal text-[color:var(--extension-accent)] hover:opacity-70"
+                        className="shrink-0 text-xs font-normal text-primary hover:opacity-70"
                         onClick={setMax}
                       >
                         Max
@@ -299,7 +299,7 @@ export function SendSpl() {
                   type="button"
                   variant="secondary"
                   size="lg"
-                  className="h-12 rounded-full text-[15px] font-normal"
+                  className="h-12 rounded-2xl text-[15px] font-normal"
                   onClick={() => navigate(sendBackTo)}
                 >
                   Cancel
@@ -307,7 +307,7 @@ export function SendSpl() {
                 <Button
                   type="button"
                   size="lg"
-                  className="h-12 rounded-full text-[15px] font-normal"
+                  className="h-12 rounded-2xl text-[15px] font-normal"
                   disabled={!canSend}
                   onClick={() => void onSend()}
                 >
@@ -352,7 +352,7 @@ export function SendSpl() {
                 type="button"
                 size="lg"
                 disabled
-                className="h-12 w-full rounded-full bg-[var(--btn-disabled)] text-[15px] font-normal text-white opacity-100"
+                className="h-12 w-full rounded-2xl bg-[var(--btn-disabled)] text-[15px] font-normal text-white opacity-100"
               >
                 In progress…
               </Button>
@@ -375,7 +375,7 @@ export function SendSpl() {
               <Button
                 type="button"
                 size="lg"
-                className="h-12 w-full rounded-full text-[15px] font-normal"
+                className="h-12 w-full rounded-2xl text-[15px] font-normal"
                 onClick={() => {
                   setPhase("form");
                   setFadeKey((k) => k + 1);

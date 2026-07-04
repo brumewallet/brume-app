@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { motion } from "motion/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,6 +36,7 @@ export function EditAccount() {
   const [err, setErr] = useState<string | null>(null);
 
   const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeConfirm, setRemoveConfirm] = useState(false);
 
   if (!state || !acc) {
     return (
@@ -69,13 +71,6 @@ export function EditAccount() {
 
   async function doRemove() {
     if (!state || !acc) return;
-    if (
-      !window.confirm(
-        "Remove this account from Brume? You can restore it later with your recovery phrase or secret key backup.",
-      )
-    ) {
-      return;
-    }
     const wasLast = state.accounts.length === 1;
     const wasActive = acc.id === state.activeAccountId;
     setRemoveBusy(true);
@@ -93,7 +88,12 @@ export function EditAccount() {
   }
 
   return (
-    <div className="flex flex-col gap-5 px-4 pb-24 pt-4">
+    <motion.div
+      className="flex flex-col gap-5 px-4 pb-24 pt-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <div className="flex items-center gap-2">
         <Link
           to="/accounts"
@@ -105,13 +105,13 @@ export function EditAccount() {
         >
           <ArrowLeftIcon className="size-[22px]" />
         </Link>
-        <h1 className="flex-1 text-center text-lg font-semibold text-foreground pr-8">
+        <h1 className="flex-1 text-center text-lg font-semibold text-foreground pr-8" style={{ fontFamily: "var(--font-display)" }}>
           Edit account
         </h1>
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted text-2xl font-bold text-foreground">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-primary">
           {(
             label.trim().charAt(0) ||
             acc.address.charAt(0) ||
@@ -120,7 +120,7 @@ export function EditAccount() {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-card p-4 ring-1 ring-border/60">
+      <div className="rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50 p-4">
         <FieldGroup className="gap-3">
           <Field>
             <FieldLabel htmlFor="acct-name" className="text-xs">
@@ -170,15 +170,42 @@ export function EditAccount() {
         <span className="text-muted-foreground">›</span>
       </Link>
 
-      <Button
-        type="button"
-        variant="ghost"
-        className="h-12 w-full rounded-2xl text-destructive hover:bg-destructive/10 hover:text-destructive"
-        disabled={removeBusy}
-        onClick={() => void doRemove()}
-      >
-        {removeBusy ? "Removing…" : "Remove account"}
-      </Button>
-    </div>
+      {removeConfirm ? (
+        <div className="flex flex-col gap-2 rounded-2xl border border-destructive/25 bg-destructive/8 p-4">
+          <p className="text-[13px] leading-snug text-foreground">
+            Remove this account? You can restore it later with your recovery phrase.
+          </p>
+          <div className="flex gap-2 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 flex-1 rounded-xl text-[14px]"
+              onClick={() => setRemoveConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="h-10 flex-1 rounded-xl text-[14px]"
+              disabled={removeBusy}
+              onClick={() => void doRemove()}
+            >
+              {removeBusy ? "Removing…" : "Remove"}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-12 w-full rounded-2xl text-destructive hover:bg-destructive/10 hover:text-destructive"
+          disabled={removeBusy}
+          onClick={() => setRemoveConfirm(true)}
+        >
+          Remove account
+        </Button>
+      )}
+    </motion.div>
   );
 }

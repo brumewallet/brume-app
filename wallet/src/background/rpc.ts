@@ -1,10 +1,13 @@
+import { Buffer } from "buffer";
 import { verifyTeeRpcIntegrity } from "@magicblock-labs/ephemeral-rollups-sdk";
 import {
+  AccountMeta,
   Connection,
   Keypair,
   PublicKey,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
   VersionedTransaction,
 } from "@solana/web3.js";
 import nacl from "tweetnacl";
@@ -28,6 +31,7 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   createBurnCheckedInstruction,
   createCloseAccountInstruction,
+  createSyncNativeInstruction,
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
   tokenProgramPubkey,
@@ -750,6 +754,76 @@ export async function burnSplToken(params: {
   };
 }
 
+// Wrap native SOL into wSOL: creates the wSOL ATA if needed, transfers SOL in,
+// then syncs the ATA balance. `amountSol` is a human decimal string (e.g. "1.5").
+export async function wrapSol(params: {
+  network: NetworkId;
+  from: Keypair;
+  amountSol: string;
+  rpcUrlOverride?: string | null;
+}): Promise<{ signature: string }> {
+  const conn = getConnection(params.network, params.rpcUrlOverride);
+  const owner = params.from.publicKey;
+  const mint = new PublicKey(SOL_WRAPPED_MINT);
+  const wsolAta = getAssociatedTokenAddressSync(mint, owner, TOKEN_PROGRAM_ID);
+
+  const lamports = BigInt(Math.round(parseFloat(params.amountSol) * 1e9));
+  if (lamports <= 0n) throw new Error("Amount must be positive");
+
+  const nativeBal = await conn.getBalance(owner);
+  if (BigInt(nativeBal) < lamports + 5000n) throw new Error("Insufficient SOL (need amount + fees)");
+
+  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
+  const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
+
+  tx.add(createAssociatedTokenAccountIdempotentInstruction(owner, wsolAta, owner, mint, TOKEN_PROGRAM_ID));
+  tx.add(SystemProgram.transfer({ fromPubkey: owner, toPubkey: wsolAta, lamports }));
+  tx.add(createSyncNativeInstruction(wsolAta));
+  tx.sign(params.from);
+
+  const sig = await sendRawTransactionWithDetailedLogs(
+    conn,
+    tx.serialize(),
+    blockhash,
+    lastValidBlockHeight,
+    { skipPreflight: false, preflightCommitment: "confirmed" },
+    { flow: "wrapSol", network: params.network, owner: owner.toBase58(), lamports: lamports.toString() },
+  );
+  return { signature: sig };
+}
+
+// Unwrap wSOL by closing the wSOL ATA. The Solana runtime converts the token
+// balance + rent back to native SOL automatically on close.
+export async function unwrapSol(params: {
+  network: NetworkId;
+  from: Keypair;
+  rpcUrlOverride?: string | null;
+}): Promise<{ signature: string }> {
+  const conn = getConnection(params.network, params.rpcUrlOverride);
+  const owner = params.from.publicKey;
+  const mint = new PublicKey(SOL_WRAPPED_MINT);
+  const wsolAta = getAssociatedTokenAddressSync(mint, owner, TOKEN_PROGRAM_ID);
+
+  const bal = await conn.getTokenAccountBalance(wsolAta);
+  const have = BigInt(bal.value.amount);
+  if (have <= 0n) throw new Error("No wSOL to unwrap");
+
+  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
+  const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
+  tx.add(createCloseAccountInstruction(wsolAta, owner, owner, TOKEN_PROGRAM_ID));
+  tx.sign(params.from);
+
+  const sig = await sendRawTransactionWithDetailedLogs(
+    conn,
+    tx.serialize(),
+    blockhash,
+    lastValidBlockHeight,
+    { skipPreflight: false, preflightCommitment: "confirmed" },
+    { flow: "unwrapSol", network: params.network, owner: owner.toBase58() },
+  );
+  return { signature: sig };
+}
+
 // Smallest-unit SPL balance for `owner` ATA at `mint`, read at the given commitment (default processed).
 
 export async function fetchSplAtaBalanceRawForOwner(
@@ -957,4 +1031,53 @@ export async function getRecentSignatures(
     err: s.err,
     blockTime: s.blockTime ?? null,
   }));
+}
+
+const MPL_CORE_PROGRAM_ID = new PublicKey(
+  "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d",
+);
+
+// Burns an MPL Core NFT asset using the BurnV1 instruction (discriminator=12).
+export async function burnMplCoreNft(params: {
+  network: NetworkId;
+  from: Keypair;
+  assetAddress: string;
+  collectionAddress: string | null;
+  rpcUrlOverride?: string | null;
+}): Promise<string> {
+  const conn = getConnection(params.network, params.rpcUrlOverride);
+  const asset = new PublicKey(params.assetAddress);
+  const owner = params.from.publicKey;
+  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
+
+  // BurnV1 data: u8 discriminator (12) + option<CompressionProof> = None (0x00)
+  const data = Buffer.from([12, 0]);
+
+  const keys: AccountMeta[] = [
+    { pubkey: asset, isSigner: false, isWritable: true },
+    {
+      pubkey: params.collectionAddress
+        ? new PublicKey(params.collectionAddress)
+        : MPL_CORE_PROGRAM_ID,
+      isSigner: false,
+      isWritable: !!params.collectionAddress,
+    },
+    { pubkey: owner, isSigner: true, isWritable: true },
+    { pubkey: MPL_CORE_PROGRAM_ID, isSigner: false, isWritable: false },
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    { pubkey: MPL_CORE_PROGRAM_ID, isSigner: false, isWritable: false },
+  ];
+
+  const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
+  tx.add(new TransactionInstruction({ keys, programId: MPL_CORE_PROGRAM_ID, data }));
+  tx.sign(params.from);
+
+  return sendRawTransactionWithDetailedLogs(
+    conn,
+    tx.serialize(),
+    blockhash,
+    lastValidBlockHeight,
+    { skipPreflight: false, preflightCommitment: "confirmed" },
+    { flow: "burnMplCoreNft", network: params.network, asset: params.assetAddress },
+  );
 }

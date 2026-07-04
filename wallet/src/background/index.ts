@@ -36,7 +36,10 @@ import {
 } from "./api-client";
 import { validateOrigin } from "./origin-guard";
 import {
+  burnMplCoreNft,
   burnSplToken,
+  unwrapSol,
+  wrapSol,
   fetchShieldBalanceInfo,
   fetchSolBalanceBaseUnits,
   requestAirdropDevnet,
@@ -56,15 +59,18 @@ import {
   isShieldBalancesCacheFresh,
   readActivityCache,
   readBalanceCache,
+  readNftCache,
   readPortfolioCache,
   readPortfolioCacheEntry,
   readShieldBalancesCacheEntry,
   writeActivityCache,
   writeBalanceCache,
+  writeNftCache,
   writePortfolioCache,
   writeShieldBalancesCache,
   type CachedPortfolioToken,
 } from "./ui-cache";
+import { fetchBrumeNfts, type NftItem } from "./api-client";
 
 const UI_SURFACE_KEY = "brume_ui_surface";
 const AUTO_LOCK_TIMEOUT_KEY = "brume_auto_lock_timeout_minutes";
@@ -135,6 +141,7 @@ let sessionVaultPassword: string | null = null;
 let unlockedKeypairs: Map<string, Keypair> | null = null;
 let cachedSolBalanceBaseUnits: bigint | null = null;
 let cachedPortfolioTokens: CachedPortfolioToken[] | null = null;
+let cachedNfts: NftItem[] | null = null;
 let cachedShieldedBalances: Record<string, string> | null = null;
 let lastRpcError: string | null = null;
 let lastIndexerError: string | null = null;
@@ -189,6 +196,7 @@ async function checkAutoLock(): Promise<void> {
 function clearWalletSessionCaches(): void {
   cachedSolBalanceBaseUnits = null;
   cachedPortfolioTokens = null;
+  cachedNfts = null;
   cachedShieldedBalances = null;
   lastRpcError = null;
   lastIndexerError = null;
@@ -382,6 +390,7 @@ async function refreshWalletData(opts?: {
   if (!sessionKeypair) {
     cachedSolBalanceBaseUnits = null;
     cachedPortfolioTokens = null;
+    cachedNfts = null;
     cachedShieldedBalances = null;
     lastRpcError = null;
     lastIndexerError = null;
@@ -1230,6 +1239,145 @@ async function handleMessage(
             ok: false,
             error: walletError(4002, m),
           });
+        }
+        return;
+      }
+
+      case "WRAP_SOL": {
+        if (!sessionKeypair) {
+          sendResponse({ ok: false, error: walletError(WalletErrorCodes.WalletNotReady, "Locked") });
+          return;
+        }
+        const p = await getVaultOrThrow();
+        const amountSol = raw.payload.amountSol?.trim();
+        if (!amountSol) {
+          sendResponse({ ok: false, error: walletError(4002, "Amount required") });
+          return;
+        }
+        try {
+          const result = await wrapSol({
+            network: p.network,
+            from: sessionKeypair,
+            amountSol,
+            rpcUrlOverride: p.rpcUrlOverride ?? null,
+          });
+          await fetchAndCacheSolBalance();
+          cachedPortfolioTokens = null;
+          sendResponse({ ok: true, payload: { signature: result.signature } });
+        } catch (e) {
+          sendResponse({ ok: false, error: walletError(4002, messageFromUnknown(e)) });
+        }
+        return;
+      }
+
+      case "UNWRAP_SOL": {
+        if (!sessionKeypair) {
+          sendResponse({
+            ok: false,
+            error: walletError(WalletErrorCodes.WalletNotReady, "Locked"),
+          });
+          return;
+        }
+        const p = await getVaultOrThrow();
+        try {
+          const result = await unwrapSol({
+            network: p.network,
+            from: sessionKeypair,
+            rpcUrlOverride: p.rpcUrlOverride ?? null,
+          });
+          // Remove wSOL from portfolio cache since ATA is now closed
+          await applyBurnToPortfolioCache({
+            network: p.network,
+            address: sessionKeypair.publicKey.toBase58(),
+            mint: SOL_WRAPPED_MINT,
+            burnAll: true,
+            remainingAmountRaw: null,
+          });
+          await fetchAndCacheSolBalance();
+          sendResponse({ ok: true, payload: { signature: result.signature } });
+        } catch (e) {
+          const m = messageFromUnknown(e);
+          sendResponse({ ok: false, error: walletError(4002, m) });
+        }
+        return;
+      }
+
+      case "GET_NFTS": {
+        const p = await loadVault();
+        const addr = sessionKeypair?.publicKey.toBase58() ?? (p?.accounts?.length ? (() => { try { return getActiveAccountEntry(p!).keystore.address; } catch { return null; } })() : null);
+        if (!addr) {
+          sendResponse({ ok: true, payload: { nfts: [] } });
+          return;
+        }
+        const network = p?.network ?? DEFAULT_NETWORK;
+        const forceRefresh = raw.payload?.refresh === true;
+
+        if (!forceRefresh && cachedNfts !== null) {
+          sendResponse({ ok: true, payload: { nfts: cachedNfts, cached: true } });
+          return;
+        }
+        if (!forceRefresh) {
+          const disk = await readNftCache(network, addr);
+          if (disk) {
+            cachedNfts = disk.nfts;
+            sendResponse({ ok: true, payload: { nfts: disk.nfts, cached: true, cachedAt: disk.cachedAt } });
+            return;
+          }
+        }
+        try {
+          const res = await fetchBrumeNfts(network, addr, p?.rpcUrlOverride ?? null);
+          cachedNfts = res.nfts;
+          await writeNftCache(network, addr, res.nfts);
+          sendResponse({ ok: true, payload: { nfts: res.nfts, cached: false } });
+        } catch (e) {
+          const m = messageFromUnknown(e);
+          sendResponse({ ok: false, error: walletError(4002, m) });
+        }
+        return;
+      }
+
+      case "BURN_NFT": {
+        if (!sessionKeypair) {
+          sendResponse({ ok: false, error: walletError(WalletErrorCodes.WalletNotReady, "Locked") });
+          return;
+        }
+        const p = await getVaultOrThrow();
+        const { mint, collection, standard } = raw.payload;
+        if (!mint) {
+          sendResponse({ ok: false, error: walletError(4002, "Mint required") });
+          return;
+        }
+        try {
+          let sig: string;
+          if (standard === "mpl-core") {
+            sig = await burnMplCoreNft({
+              network: p.network,
+              from: sessionKeypair,
+              assetAddress: mint,
+              collectionAddress: collection ?? null,
+              rpcUrlOverride: p.rpcUrlOverride ?? null,
+            });
+          } else if (standard === "legacy") {
+            const result = await burnSplToken({
+              network: p.network,
+              from: sessionKeypair,
+              mintAddress: mint,
+              amountStr: "all",
+              rpcUrlOverride: p.rpcUrlOverride ?? null,
+            });
+            sig = result.signature;
+          } else {
+            throw new Error("Programmable NFT burn not yet supported");
+          }
+          // Remove burned NFT from in-memory cache so next GET_NFTS is up-to-date
+          if (cachedNfts !== null) {
+            cachedNfts = cachedNfts.filter((n) => n.mint !== mint);
+          }
+          await fetchAndCacheSolBalance();
+          sendResponse({ ok: true, payload: { signature: sig } });
+        } catch (e) {
+          const m = messageFromUnknown(e);
+          sendResponse({ ok: false, error: walletError(4002, m) });
         }
         return;
       }

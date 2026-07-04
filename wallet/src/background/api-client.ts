@@ -181,3 +181,32 @@ export async function fetchBrumePerTransferUnsigned(params: {
 
   return normalizeUnsignedPaymentTransaction(data);
 }
+
+export type NftItem = {
+  mint: string;
+  name: string;
+  image: string | null;
+  collection: string | null;
+  collectionName: string | null;
+  standard: "mpl-core" | "legacy" | "programmable";
+  frozen: boolean;
+};
+
+export async function fetchBrumeNfts(
+  network: NetworkId,
+  owner: string,
+  rpcUrlOverride: string | null,
+): Promise<{ nfts: NftItem[]; hint?: string }> {
+  const origin = getBrumeApiOrigin();
+  const url = buildUrl(origin, "/api/nfts", {
+    owner,
+    network,
+    rpcUrl: rpcUrlOverride ?? undefined,
+  });
+  const res = await fetch(url, { method: "GET" });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`Brume API ${res.status}${t ? `: ${t.slice(0, 160)}` : ""}`);
+  }
+  return (await res.json()) as { nfts: NftItem[]; hint?: string };
+}

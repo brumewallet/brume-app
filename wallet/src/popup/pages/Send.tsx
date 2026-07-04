@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { getNativeSolDisplay } from "@/lib/token-metadata";
 import { useJupiterPortfolioPrices } from "../context/JupiterPortfolioPrices";
 import { Input } from "@/components/ui/input";
@@ -130,7 +131,12 @@ export function Send() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
       <PageHeader title="Send" backTo="/" />
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-6 pt-3">
+      <motion.div
+        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-6 pt-3"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 22 }}
+      >
         <p className="text-sm text-muted-foreground">
           Choose an asset to send from your wallet.
         </p>
@@ -147,7 +153,7 @@ export function Send() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/55" style={{ fontFamily: "var(--font-display)" }}>
             Wallet
           </p>
           <TokenRow
@@ -181,7 +187,7 @@ export function Send() {
 
         {hasPrivateSection ? (
           <div className="flex flex-col gap-2 border-t border-border/60 pt-4 pb-1 pr-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/55" style={{ fontFamily: "var(--font-display)" }}>
               Private balance
             </p>
             <p className="text-xs text-muted-foreground">
@@ -194,7 +200,7 @@ export function Send() {
                 to={`/send/spl/${encodeURIComponent(SOL_WRAPPED_MINT)}`}
                 navState={{
                   sendBackTo: "/send",
-                  fromPrivateBalance: true,
+                  
                 }}
                 symbol={solList.symbol}
                 name={solList.name}
@@ -204,7 +210,7 @@ export function Send() {
                 logoUri={solList.logoURI}
                 verified={solList.fromRegistry}
                 fiatUsdApprox={solPrivateFiat}
-                forceShieldBadge
+                
               />
             ) : null}
             {splPrivateSorted.map((t) => {
@@ -222,7 +228,7 @@ export function Send() {
                   to={`/send/spl/${encodeURIComponent(t.mint)}`}
                   navState={{
                     sendBackTo: "/send",
-                    fromPrivateBalance: true,
+                    
                   }}
                   symbol={t.symbol}
                   name={t.name}
@@ -232,7 +238,7 @@ export function Send() {
                   logoUri={t.logoUri}
                   verified={false}
                   fiatUsdApprox={rowFiat}
-                  forceShieldBadge
+                  
                 />
               );
             })}
@@ -241,10 +247,10 @@ export function Send() {
 
         {filteredSpl.length === 0 && q.trim() ? (
           <p className="text-center text-sm text-muted-foreground">
-            No tokens match “{q.trim()}”.
+            {`No tokens match "${q.trim()}".`}
           </p>
         ) : null}
-      </div>
+      </motion.div>
     </div>
   );
 }

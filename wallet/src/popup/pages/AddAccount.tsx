@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { motion } from "motion/react";
 import {
   AccountRecoveryIcon,
   ArrowDown01Icon,
@@ -18,13 +19,15 @@ function OptionRow(props: {
   disabled?: boolean;
 }) {
   const inner = (
-    <div
+    <motion.div
       className={cn(
-        "flex w-full items-center gap-3 rounded-2xl bg-card px-4 py-3.5 text-left ring-1 ring-border/60 transition-colors",
+        "flex w-full items-center gap-3 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50 px-4 py-3.5 text-left transition-colors",
         props.disabled
           ? "cursor-not-allowed opacity-50"
-          : "hover:bg-muted/30 active:scale-[0.99]",
+          : "hover:bg-muted/30",
       )}
+      whileTap={props.disabled ? undefined : { scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
         <BrumeIcon icon={props.icon} size={22} />
@@ -33,7 +36,7 @@ function OptionRow(props: {
         <p className="text-[15px] font-semibold text-foreground">{props.title}</p>
         <p className="text-xs text-muted-foreground">{props.subtitle}</p>
       </div>
-    </div>
+    </motion.div>
   );
 
   if (props.disabled || !props.to) {
@@ -56,7 +59,12 @@ export function AddAccount() {
   const hdOk = state?.hdDerivationAvailable ?? false;
 
   return (
-    <div className="flex flex-col gap-4 px-4 pb-24 pt-4">
+    <motion.div
+      className="flex flex-col gap-4 px-4 pb-24 pt-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <div className="flex items-center gap-2">
         <Link
           to="/accounts"
@@ -68,7 +76,7 @@ export function AddAccount() {
         >
           <ArrowLeftIcon className="size-[22px]" />
         </Link>
-        <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground">
+        <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
           Add account
         </h1>
       </div>
@@ -123,6 +131,6 @@ export function AddAccount() {
       >
         Close
       </Link>
-    </div>
+    </motion.div>
   );
 }

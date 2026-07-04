@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import * as msg from "../messaging";
 import { useWalletStore } from "../store";
@@ -31,7 +32,12 @@ export function AddHdAccount() {
 
   if (state && !state.hdDerivationAvailable) {
     return (
-      <div className="flex flex-col gap-4 px-4 pb-24 pt-4">
+      <motion.div
+        className="flex flex-col gap-4 px-4 pb-24 pt-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 22 }}
+      >
         <div className="flex items-center gap-2">
           <Link
             to="/accounts/add"
@@ -43,7 +49,7 @@ export function AddHdAccount() {
           >
             <ArrowLeftIcon className="size-[22px]" />
           </Link>
-          <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground">
+          <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
             Add account
           </h1>
         </div>
@@ -56,12 +62,17 @@ export function AddHdAccount() {
           </Link>
           .
         </p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col gap-4 bg-background px-4 pb-24 pt-4">
+    <motion.div
+      className="flex min-h-full flex-1 flex-col gap-4 bg-background px-4 pb-24 pt-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <div className="flex items-center gap-2">
         <Link
           to="/accounts/add"
@@ -73,20 +84,22 @@ export function AddHdAccount() {
         >
           <ArrowLeftIcon className="size-[22px]" />
         </Link>
-        <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground">
+        <h1 className="flex-1 pr-8 text-center text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
           Add account
         </h1>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Derives the next address from your saved recovery phrase using the
-        Solana BIP44 path{" "}
-        <span className="font-mono text-xs text-foreground/80">
-          m/44&apos;/501&apos;/…&apos;/0&apos;
-        </span>{" "}
-        (same family as Phantom and Solflare). Uses your wallet password from
-        this session — unlock first if you see an error.
-      </p>
+      <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl p-4">
+        <p className="text-sm text-muted-foreground">
+          Derives the next address from your saved recovery phrase using the
+          Solana BIP44 path{" "}
+          <span className="font-mono text-xs text-foreground/80">
+            m/44&apos;/501&apos;/&hellip;&apos;/0&apos;
+          </span>{" "}
+          (same family as Phantom and Solflare). Uses your wallet password from
+          this session.
+        </p>
+      </div>
 
       {err ? (
         <p className="text-sm text-destructive" role="alert">
@@ -102,6 +115,6 @@ export function AddHdAccount() {
       >
         {busy ? "Adding…" : "Add account"}
       </Button>
-    </div>
+    </motion.div>
   );
 }

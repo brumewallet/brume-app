@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "motion/react";
 import { DEFAULT_EXPLORER_ID, explorerTxUrl } from "@/shared/constants";
 import {
   Alert,
@@ -95,9 +96,14 @@ export function Activity() {
   }, [items]);
 
   return (
-    <div className="flex flex-col gap-3 px-4 pb-24 pt-4">
+    <motion.div
+      className="flex flex-col gap-3 px-4 pb-24 pt-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <div className="flex items-start justify-between gap-2">
-        <h1 className="text-lg font-semibold text-foreground">Activity</h1>
+        <h1 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Activity</h1>
         <Button
           type="button"
           variant="secondary"
@@ -119,7 +125,7 @@ export function Activity() {
           {Array.from({ length: 6 }, (_, i) => (
             <div
               key={`sk-${i}`}
-              className="flex items-center gap-3 rounded-2xl bg-card p-3 ring-1 ring-border/60"
+              className="flex items-center gap-3 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50 p-3"
             >
               <Skeleton className="size-9 shrink-0 rounded-full" />
               <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -165,10 +171,10 @@ export function Activity() {
         <div className="flex flex-col gap-5">
           {groupedSections.map(({ heading, rows }) => (
             <section key={heading}>
-              <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/55" style={{ fontFamily: "var(--font-display)" }}>
                 {heading}
               </h2>
-              <ul className="flex flex-col gap-0 divide-y divide-border rounded-2xl bg-card ring-1 ring-border/60">
+              <ul className="flex flex-col gap-0 divide-y divide-border rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50">
                 {rows.map((it) => {
                   const title =
                     it.displayLabel ??
@@ -264,6 +270,6 @@ export function Activity() {
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

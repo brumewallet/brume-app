@@ -11,6 +11,7 @@ import { ApproveSign } from "./pages/ApproveSign";
 import { CreateWallet } from "./pages/CreateWallet";
 import { Dashboard } from "./pages/Dashboard";
 import { ImportPrivateKey } from "./pages/ImportPrivateKey";
+import { ImportOptions } from "./pages/ImportOptions";
 import { ImportWallet } from "./pages/ImportWallet";
 import { Receive } from "./pages/Receive";
 import { Send } from "./pages/Send";
@@ -18,7 +19,7 @@ import { SendSol } from "./pages/SendSol";
 import { SendSpl } from "./pages/SendSpl";
 import { TokenDetail } from "./pages/TokenDetail";
 import { SendSuccess } from "./pages/SendSuccess";
-import { Shield } from "./pages/Shield";
+import { NFTs } from "./pages/NFTs";
 import { Settings } from "./pages/Settings";
 import { Unlock } from "./pages/Unlock";
 import { Welcome } from "./pages/Welcome";
@@ -78,7 +79,7 @@ function GuardLayout() {
   }
 
   if (!state.hasVault) {
-    const allowed = ["/welcome", "/create", "/import", "/import-private-key"];
+    const allowed = ["/welcome", "/create", "/import-options", "/import", "/import-private-key"];
     if (!allowed.includes(path)) {
       return <Navigate to="/welcome" replace />;
     }
@@ -87,7 +88,7 @@ function GuardLayout() {
       return <Navigate to="/unlock" replace />;
     }
   } else if (
-    ["/welcome", "/create", "/import", "/import-private-key", "/unlock"].includes(
+    ["/welcome", "/create", "/import-options", "/import", "/import-private-key", "/unlock"].includes(
       path,
     )
   ) {
@@ -112,9 +113,11 @@ export function App() {
         <Route element={<GuardLayout />}>
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/create" element={<CreateWallet />} />
+          <Route path="/import-options" element={<ImportOptions />} />
           <Route path="/import" element={<ImportWallet />} />
           <Route path="/import-private-key" element={<ImportPrivateKey />} />
           <Route path="/accounts/create" element={<CreateWallet />} />
+          <Route path="/accounts/import-options" element={<ImportOptions />} />
           <Route path="/accounts/import" element={<ImportWallet />} />
           <Route
             path="/accounts/import-private-key"
@@ -131,7 +134,7 @@ export function App() {
           <Route path="/" element={<MainShell />}>
             <Route index element={<Dashboard />} />
             <Route path="token/:mint" element={<TokenDetail />} />
-            <Route path="shield" element={<Shield />} />
+            <Route path="nfts" element={<NFTs />} />
             <Route path="activity" element={<Activity />} />
             <Route path="settings" element={<Settings />} />
             <Route path="accounts" element={<ManageAccounts />} />

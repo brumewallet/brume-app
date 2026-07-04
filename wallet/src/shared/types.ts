@@ -103,6 +103,30 @@ export type ExtensionMessage =
       };
     }
   | {
+      type: "WRAP_SOL";
+      requestId: string;
+      payload: { amountSol: string };
+    }
+  | {
+      type: "UNWRAP_SOL";
+      requestId: string;
+      payload: Record<string, never>;
+    }
+  | {
+      type: "GET_NFTS";
+      requestId: string;
+      payload: { refresh?: boolean };
+    }
+  | {
+      type: "BURN_NFT";
+      requestId: string;
+      payload: {
+        mint: string;
+        collection: string | null;
+        standard: "mpl-core" | "legacy" | "programmable";
+      };
+    }
+  | {
       type: "GET_SHIELD_BALANCES";
       requestId: string;
       payload: { mint: string };
@@ -296,8 +320,6 @@ export interface PersistedVault {
   accounts: WalletAccount[];
   network: NetworkId;
   rpcUrlOverride?: string | null;
-    // Block explorer for links; omitted = Solana Explorer.
-
   explorerId?: ExplorerId;
   allowlist: string[];
   blocklist: string[];

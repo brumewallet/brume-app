@@ -1,5 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { motion } from "motion/react";
 import { Blockchain05Icon } from "@hugeicons/core-free-icons";
 import { Check } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import * as msg from "../messaging";
 import { useWalletStore } from "../store";
 import { cn } from "@/lib/utils";
 import { CopyIcon, NavSendSolidIcon } from "@/components/Icons";
+import { ArrowLeftRight } from "lucide-react";
 
 function ellipsifyMint(mint: string, head = 4, tail = 4): string {
   const t = mint.replace(/\s/g, "");
@@ -85,13 +87,27 @@ export function TokenDetail() {
   );
 
   const [burnAmount, setBurnAmount] = useState("");
-  const [busy, setBusy] = useState<null | "partial" | "all">(null);
+  const [wrapAmount, setWrapAmount] = useState("");
+  const [busy, setBusy] = useState<null | "partial" | "all" | "unwrap" | "wrap">(null);
   const [err, setErr] = useState<string | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [burnConfirm, setBurnConfirm] = useState<
     null | { mode: "all" } | { mode: "partial"; amount: string }
   >(null);
+  const [unwrapConfirm, setUnwrapConfirm] = useState(false);
+  const [wrapConfirm, setWrapConfirm] = useState(false);
+
+  const isWSOL = !isNativeSolDetail && mint === SOL_WRAPPED_MINT;
+
+  // wSOL row found in portfolio — used on the native SOL detail page to surface unwrap
+  const wsolRow = useMemo(
+    () => state?.portfolioTokens?.find((t) => t.mint === SOL_WRAPPED_MINT) ?? null,
+    [state?.portfolioTokens],
+  );
+  const wsolHumanBal = wsolRow
+    ? Number(BigInt(wsolRow.amountRaw)) / 1e9
+    : 0;
 
   const symbol = isNativeSolDetail
     ? (solDisplay?.symbol ?? "SOL")
@@ -122,6 +138,15 @@ export function TokenDetail() {
     const raw = BigInt(row.amountRaw);
     return Number(raw) / Number(10n ** BigInt(row.decimals));
   }, [isNativeSolDetail, state, row, decimals]);
+
+  const unwrapHumanBal = isNativeSolDetail ? wsolHumanBal : humanBal;
+  const showUnwrapAction =
+    (isNativeSolDetail && wsolHumanBal > 0) || (isWSOL && humanBal > 0);
+
+  useEffect(() => {
+    if (!isNativeSolDetail || !state || state.locked) return;
+    void msg.refreshBalanceFromChain().then(() => refresh());
+  }, [isNativeSolDetail, state?.locked, refresh]);
 
   const net = state ? NETWORKS[state.network] : null;
   const explorerMint =
@@ -176,6 +201,40 @@ export function TokenDetail() {
     }
   }
 
+  async function doUnwrap() {
+    setErr(null);
+    setBusy("unwrap");
+    setUnwrapConfirm(false);
+    try {
+      await msg.unwrapSol();
+      setSuccessMsg("Unwrapped. SOL returned to your wallet.");
+      window.setTimeout(() => setSuccessMsg(null), 6000);
+      scheduleWalletStateRefresh(refresh);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Unwrap failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function doWrap() {
+    const amt = wrapAmount.trim();
+    setErr(null);
+    setBusy("wrap");
+    setWrapConfirm(false);
+    try {
+      await msg.wrapSol(amt);
+      setWrapAmount("");
+      setSuccessMsg("Wrapped. wSOL added to your wallet.");
+      window.setTimeout(() => setSuccessMsg(null), 6000);
+      scheduleWalletStateRefresh(refresh);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Wrap failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (!state) return null;
 
   if (!isNativeSolDetail && !row && mint.length < 32) {
@@ -204,11 +263,16 @@ export function TokenDetail() {
   const burnAllDisabled = burning || humanBal <= 0;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+    <motion.div
+      className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
       <PageHeader title={symbol} backTo={backTo} />
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
-        <h2 className="mb-2 text-[15px] font-semibold text-foreground">Info</h2>
-        <div className="rounded-2xl bg-card px-4 ring-1 ring-border/70">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-3">
+        <h2 className="mb-2 text-[15px] font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Info</h2>
+        <div className="rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50 px-4">
           <div className="flex items-center gap-3 border-b border-border/50 py-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/12 ring-1 ring-primary/25">
               {logoUri && !logoFailed ? (
@@ -258,7 +322,7 @@ export function TokenDetail() {
                 onClick={() => void copyMint()}
               >
                 {copied ? (
-                  <Check className="h-4 w-4 text-[#34C759]" strokeWidth={2} />
+                  <Check className="h-4 w-4 text-[color:var(--extension-success)]" strokeWidth={2} />
                 ) : (
                   <CopyIcon className="size-4" />
                 )}
@@ -280,8 +344,17 @@ export function TokenDetail() {
           </a>
         ) : null}
 
-        <div className="pt-4">
-          {burning ? (
+        <div className="flex flex-col gap-2 pt-4">
+          {busy === "unwrap" ? (
+            <div
+              className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-primary/55 text-[15px] font-semibold text-primary-foreground"
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <Spinner className="size-5 text-primary-foreground" />
+              Unwrapping…
+            </div>
+          ) : burning ? (
             <div
               className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-primary/55 text-[15px] font-semibold text-primary-foreground"
               aria-busy="true"
@@ -291,19 +364,55 @@ export function TokenDetail() {
               Send
             </div>
           ) : isNativeSolDetail ? (
-            <Link
-              to="/send/sol"
-              state={{
-                sendBackTo: `/token/${encodeURIComponent(NATIVE_SOL_TOKEN_SEGMENT)}`,
-              }}
-              className={cn(
-                buttonVariants({ variant: "default", size: "lg" }),
-                "h-12 w-full gap-2 rounded-2xl text-[15px] font-semibold no-underline",
-              )}
-            >
-              <NavSendSolidIcon className="size-5 text-primary-foreground" />
-              Send
-            </Link>
+            <>
+              <Link
+                to="/send/sol"
+                state={{
+                  sendBackTo: `/token/${encodeURIComponent(NATIVE_SOL_TOKEN_SEGMENT)}`,
+                }}
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "h-12 w-full gap-2 rounded-2xl text-[15px] font-semibold no-underline",
+                )}
+              >
+                <NavSendSolidIcon className="size-5 text-primary-foreground" />
+                Send
+              </Link>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Amount to wrap"
+                  value={wrapAmount}
+                  onChange={(e) => setWrapAmount(e.target.value)}
+                  className="h-11 flex-1 rounded-2xl text-[15px]"
+                  autoComplete="off"
+                  disabled={busy != null}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 shrink-0 gap-1.5 rounded-2xl px-4"
+                  disabled={!wrapAmount.trim() || busy != null}
+                  onClick={() => setWrapConfirm(true)}
+                >
+                  <ArrowLeftRight className="size-4" />
+                  Wrap
+                </Button>
+              </div>
+              {wsolHumanBal > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full gap-2 rounded-2xl text-[15px] font-medium"
+                  disabled={busy != null}
+                  onClick={() => setUnwrapConfirm(true)}
+                >
+                  <ArrowLeftRight className="size-4" />
+                  Unwrap {wsolHumanBal.toLocaleString(undefined, { maximumFractionDigits: 4 })} wSOL to SOL
+                </Button>
+              ) : null}
+            </>
           ) : (
             <Link
               to={`/send/spl/${encodeURIComponent(mint)}`}
@@ -317,10 +426,22 @@ export function TokenDetail() {
               Send
             </Link>
           )}
+
+          {showUnwrapAction && !isNativeSolDetail && !burning && busy !== "unwrap" ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 w-full gap-2 rounded-2xl text-[15px] font-medium"
+              onClick={() => setUnwrapConfirm(true)}
+            >
+              <ArrowLeftRight className="size-4" />
+              Unwrap to SOL
+            </Button>
+          ) : null}
         </div>
 
         {successMsg ? (
-          <p className="mt-4 text-center text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          <p className="mt-4 text-center text-xs font-medium text-[color:var(--extension-success)]">
             {successMsg}
           </p>
         ) : null}
@@ -459,6 +580,82 @@ export function TokenDetail() {
           </Drawer>
         </>
       ) : null}
-    </div>
+
+      <Drawer open={wrapConfirm} onOpenChange={(open) => { if (!open) setWrapConfirm(false); }}>
+        <DrawerContent>
+          <DrawerHeader className="text-left sm:text-left">
+            <DrawerTitle>Wrap SOL?</DrawerTitle>
+            <DrawerDescription className="text-left">
+              <span className="font-medium text-foreground">{wrapAmount} SOL</span>{" "}
+              will be converted to Wrapped SOL (wSOL). You can unwrap it back at any time.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter className="flex-col gap-2 pt-2">
+            <Button type="button" variant="outline" size="lg" className="h-12 w-full rounded-2xl" onClick={() => setWrapConfirm(false)}>
+              Cancel
+            </Button>
+            <Button type="button" size="lg" className="h-12 w-full gap-2 rounded-2xl" onClick={() => void doWrap()}>
+              <ArrowLeftRight className="size-4" />
+              Wrap to wSOL
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer
+        open={unwrapConfirm}
+        onOpenChange={(open) => {
+          if (!open) setUnwrapConfirm(false);
+        }}
+      >
+        <DrawerContent>
+          <DrawerHeader className="text-left sm:text-left">
+            <DrawerTitle>Unwrap Wrapped SOL?</DrawerTitle>
+            <DrawerDescription className="text-left">
+              Your{" "}
+              <span className="font-medium text-foreground">
+                {formatTokenListAmount(unwrapHumanBal)} wSOL
+              </span>{" "}
+              will be converted back to native SOL. The token account will be closed
+              and rent lamports returned to your wallet.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter className="flex-col gap-2 pt-2">
+            {err != null && unwrapConfirm ? (
+              <p className="px-1 text-center text-sm text-destructive">{err}</p>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-12 w-full rounded-2xl"
+              disabled={busy === "unwrap"}
+              onClick={() => setUnwrapConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              className="h-12 w-full gap-2 rounded-2xl"
+              disabled={busy === "unwrap"}
+              onClick={() => void doUnwrap()}
+            >
+              {busy === "unwrap" ? (
+                <>
+                  <Spinner className="size-4" />
+                  Unwrapping…
+                </>
+              ) : (
+                <>
+                  <ArrowLeftRight className="size-4" />
+                  Unwrap to SOL
+                </>
+              )}
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    </motion.div>
   );
 }

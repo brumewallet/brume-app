@@ -1,13 +1,15 @@
+import { motion } from "motion/react";
 import { formatTokenListAmount } from "@/lib/utils";
 import { SOL_BASE_UNITS_PER_SOL } from "@/shared/constants";
 import { cn } from "@/lib/utils";
+
+const spring = { type: "spring", stiffness: 200, damping: 22, mass: 1 } as const;
 
 export function BalanceCard(props: {
   balanceSolBaseUnits: string | null;
   simpleMode: boolean;
   totalUsdApprox: number | null;
   totalPortfolioSolApprox: number | null;
-  /** When true, total USD line uses SVG pixelation (extension-style hide). */
   balanceHidden?: boolean;
 }) {
   const raw =
@@ -25,7 +27,7 @@ export function BalanceCard(props: {
   const hidden = props.balanceHidden === true;
 
   return (
-    <div className="relative brume-animate-in px-1 pt-2 text-center">
+    <>
       <svg
         aria-hidden
         className="pointer-events-none absolute h-0 w-0 overflow-hidden"
@@ -50,37 +52,53 @@ export function BalanceCard(props: {
         </defs>
       </svg>
 
-      <p
-        className={cn(
-          "text-[34px] font-semibold leading-tight tracking-tight text-foreground",
-          hidden && "text-[#bbbbc0]",
-        )}
-        style={
-          hidden
-            ? { filter: "url(#brume-pixelate-lg)", userSelect: "none" }
-            : undefined
-        }
+      {/* Glass balance card — loyal-app style */}
+      <motion.div
+        className="relative overflow-hidden rounded-3xl border border-border/50 bg-card/60 px-5 py-5 text-center backdrop-blur-xl"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={spring}
       >
-        {props.totalUsdApprox != null
-          ? `$${props.totalUsdApprox.toFixed(2)}`
-          : "—"}
-      </p>
-      {solSubtitle != null && Number.isFinite(solSubtitle) && (
+
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60"
+           style={{ fontFamily: "var(--font-display)" }}>
+          Total balance
+        </p>
+
         <p
           className={cn(
-            "mt-1 text-muted-foreground",
-            props.simpleMode ? "text-sm" : "font-mono text-[11px]",
-            hidden && "text-[#c8c8cc]",
+            "text-[40px] font-semibold leading-tight tracking-tight",
+            hidden ? "text-muted-foreground/40" : "text-foreground",
           )}
-          style={
-            hidden
-              ? { filter: "url(#brume-pixelate-sm)", userSelect: "none" }
-              : undefined
-          }
+          style={{
+            fontFamily: "var(--font-display)",
+            ...(hidden
+              ? { filter: "url(#brume-pixelate-lg)", userSelect: "none" }
+              : undefined),
+          }}
         >
-          {`${formatTokenListAmount(solSubtitle)} SOL`}
+          {props.totalUsdApprox != null
+            ? `$${props.totalUsdApprox.toFixed(2)}`
+            : "—"}
         </p>
-      )}
-    </div>
+
+        {solSubtitle != null && Number.isFinite(solSubtitle) && (
+          <p
+            className={cn(
+              "mt-1.5 text-muted-foreground",
+              props.simpleMode ? "text-sm" : "font-mono text-[12px]",
+              hidden && "opacity-30",
+            )}
+            style={
+              hidden
+                ? { filter: "url(#brume-pixelate-sm)", userSelect: "none" }
+                : undefined
+            }
+          >
+            {`${formatTokenListAmount(solSubtitle)} SOL`}
+          </p>
+        )}
+      </motion.div>
+    </>
   );
 }

@@ -4,14 +4,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Extension-inspired palette (light shell + red accent + iOS neutrals) */
+/* Brume design system — Navy + Bright Ube + Cal Sans / Onest */
 @theme {
-  --font-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-extension-accent: #f9363c;
-  --color-extension-muted-ink: rgba(60, 60, 67, 0.6);
-  --color-extension-icon: #3c3c43;
-  --color-extension-disabled: #cccddc;
+  --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cal Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Navy palette */
+  --color-navy-50: #f2f1f8;
+  --color-navy-100: #e5e2f0;
+  --color-navy-200: #c7c1e0;
+  --color-navy-300: #a099c8;
+  --color-navy-400: #6c6597;
+  --color-navy-500: #423878;
+  --color-navy-600: #322663;
+  --color-navy-700: #2b1f6b;
+  --color-navy-800: #271b69;
+  --color-navy-900: #191243;
+  --color-navy-950: #0d0925;
+
+  /* Bright Ube palette */
+  --color-ube-50: #f7f5ff;
+  --color-ube-100: #efebfe;
+  --color-ube-200: #e0dafe;
+  --color-ube-300: #ccc4fd;
+  --color-ube-400: #afa2fc;
+  --color-ube-500: #9a86f6;
+  --color-ube-600: #7e66ec;
+
+  --color-extension-accent: #afa2fc;
+  --color-extension-muted-ink: rgba(175, 162, 252, 0.5);
+  --color-extension-icon: #afa2fc;
+  --color-extension-disabled: #3a366b;
 }
 
 html,
@@ -21,7 +44,7 @@ body,
   overflow-x: hidden;
 }
 
-/* Chrome side panel: width ≥360px (user-resizable), height follows the window. */
+/* Chrome side panel */
 html.brume-shell-side {
   height: 100%;
   min-height: 100dvh;
@@ -47,7 +70,7 @@ html.brume-shell-side #root {
   overflow: hidden;
 }
 
-/* Toolbar popup: fixed height so layout matches panel scroll behavior */
+/* Toolbar popup */
 html.brume-shell-popup,
 html.brume-shell-popup body,
 html.brume-shell-popup #root {
@@ -64,10 +87,14 @@ body.brume-popup {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ------------------------------------------------------------------ */
+/* Motion — spring easing from Brume/Loyal design system              */
+/* ------------------------------------------------------------------ */
+
 @keyframes brume-fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -76,8 +103,13 @@ body.brume-popup {
 }
 
 .brume-animate-in {
-  animation: brume-fade-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: brume-fade-in 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
+
+/* Stagger helpers for sibling elements */
+.brume-animate-in:nth-child(2) { animation-delay: 0.06s; }
+.brume-animate-in:nth-child(3) { animation-delay: 0.12s; }
+.brume-animate-in:nth-child(4) { animation-delay: 0.18s; }
 
 @media (prefers-reduced-motion: reduce) {
   .brume-animate-in {
@@ -85,21 +117,10 @@ body.brume-popup {
   }
 }
 
-/* Extension-style motion */
 @keyframes pin-shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  10%,
-  50%,
-  90% {
-    transform: translateX(-6px);
-  }
-  30%,
-  70% {
-    transform: translateX(6px);
-  }
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-6px); }
+  30%, 70% { transform: translateX(6px); }
 }
 
 .brume-pin-shake {
@@ -107,16 +128,9 @@ body.brume-popup {
 }
 
 @keyframes mascot-nod {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(4deg);
-  }
-  75% {
-    transform: rotate(-4deg);
-  }
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(4deg); }
+  75% { transform: rotate(-4deg); }
 }
 
 .brume-mascot-nod {
@@ -125,13 +139,8 @@ body.brume-popup {
 }
 
 @keyframes chevron-bounce {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(4px);
-  }
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
 }
 
 .brume-chevron-bounce {
@@ -139,9 +148,7 @@ body.brume-popup {
 }
 
 @keyframes send-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .brume-send-spin {
@@ -149,9 +156,7 @@ body.brume-popup {
 }
 
 @keyframes sidebar-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .brume-sidebar-spin {
@@ -159,30 +164,33 @@ body.brume-popup {
 }
 
 @keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 .brume-skeleton-pulse {
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes brume-phase-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.brume-phase-crossfade {
+  transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.brume-phase-crossfade {
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+/* Press-scale interaction (loyal-app pattern) */
+.brume-press {
+  transition: transform 0.18s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.brume-press:active {
+  transform: scale(0.97);
+}
+
+/* Glass card (matches web app .glass) */
+.brume-glass {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(175, 162, 252, 0.15);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -194,13 +202,14 @@ body.brume-popup {
   .brume-skeleton-pulse {
     animation: none;
   }
-  .brume-phase-crossfade {
+  .brume-phase-crossfade,
+  .brume-press {
     transition: none;
   }
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -241,80 +250,85 @@ body.brume-popup {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Light: extension shell (#F5F5F5), black CTAs, red accent */
+/* ------------------------------------------------------------------ */
+/* Light: white bg, navy primary, ube accents                         */
+/* ------------------------------------------------------------------ */
 :root {
-  --background: #f5f5f5;
-  --foreground: #000000;
+  --background: #ffffff;
+  --foreground: #191243;
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #191243;
   --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: #000000;
+  --popover-foreground: #191243;
+  --primary: #271b69;
   --primary-foreground: #ffffff;
-  --secondary: rgba(0, 0, 0, 0.04);
-  --secondary-foreground: #000000;
-  --muted: #ebebeb;
-  --muted-foreground: rgba(60, 60, 67, 0.6);
-  --accent: rgba(249, 54, 60, 0.14);
-  --accent-foreground: #3c3c43;
+  --secondary: rgba(175, 162, 252, 0.10);
+  --secondary-foreground: #191243;
+  --muted: #f2f1f8;
+  --muted-foreground: rgba(25, 18, 67, 0.55);
+  --accent: rgba(175, 162, 252, 0.18);
+  --accent-foreground: #271b69;
   --destructive: #ff3b30;
-  --border: rgba(0, 0, 0, 0.06);
-  --input: rgba(0, 0, 0, 0.06);
-  --ring: #f9363c;
-  --chart-1: #f9363c;
+  --border: rgba(25, 18, 67, 0.10);
+  --input: rgba(25, 18, 67, 0.08);
+  --ring: #7e66ec;
+  --chart-1: #7e66ec;
   --chart-2: #34c759;
-  --chart-3: rgba(60, 60, 67, 0.45);
-  --chart-4: #3c3c43;
-  --chart-5: #ebebeb;
+  --chart-3: rgba(25, 18, 67, 0.45);
+  --chart-4: #271b69;
+  --chart-5: #f2f1f8;
   --radius: 1rem;
-  --sidebar: #ebebeb;
-  --sidebar-foreground: #000000;
-  --sidebar-primary: #000000;
+  --sidebar: #f2f1f8;
+  --sidebar-foreground: #191243;
+  --sidebar-primary: #271b69;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(249, 54, 60, 0.14);
-  --sidebar-accent-foreground: #3c3c43;
-  --sidebar-border: rgba(0, 0, 0, 0.06);
-  --sidebar-ring: #f9363c;
-  --extension-accent: #f9363c;
+  --sidebar-accent: rgba(175, 162, 252, 0.18);
+  --sidebar-accent-foreground: #271b69;
+  --sidebar-border: rgba(25, 18, 67, 0.10);
+  --sidebar-ring: #7e66ec;
+  --extension-accent: #7e66ec;
   --extension-success: #34c759;
-  --btn-disabled: #cccddc;
+  --btn-disabled: #c7c1e0;
 }
 
+/* ------------------------------------------------------------------ */
+/* Dark: navy-950 bg, ube-400 primary, glass surfaces                 */
+/* ------------------------------------------------------------------ */
 .dark {
-  --background: #0a0a0a;
-  --foreground: #f5f5f5;
-  --card: #1a1a1a;
-  --card-foreground: #f5f5f5;
-  --popover: #1e1e1e;
-  --popover-foreground: #f5f5f5;
-  --primary: #f5f5f5;
-  --primary-foreground: #0a0a0a;
-  --secondary: rgba(255, 255, 255, 0.06);
-  --secondary-foreground: #f5f5f5;
-  --muted: #242424;
-  --muted-foreground: rgba(235, 235, 245, 0.6);
-  --accent: rgba(249, 54, 60, 0.22);
-  --accent-foreground: #f5f5f5;
+  --background: #0d0925;
+  --foreground: #f7f5ff;
+  --card: #191243;
+  --card-foreground: #f7f5ff;
+  --popover: #1e1856;
+  --popover-foreground: #f7f5ff;
+  --primary: #afa2fc;
+  --primary-foreground: #191243;
+  --secondary: rgba(175, 162, 252, 0.10);
+  --secondary-foreground: #f7f5ff;
+  --muted: #1e1856;
+  --muted-foreground: rgba(247, 245, 255, 0.50);
+  --accent: rgba(175, 162, 252, 0.18);
+  --accent-foreground: #f7f5ff;
   --destructive: #ff453a;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #f9363c;
-  --chart-1: #f9363c;
+  --border: rgba(175, 162, 252, 0.12);
+  --input: rgba(175, 162, 252, 0.10);
+  --ring: #7e66ec;
+  --chart-1: #afa2fc;
   --chart-2: #34c759;
-  --chart-3: rgba(235, 235, 245, 0.45);
-  --chart-4: #c8c8cc;
-  --chart-5: #2a2a2a;
-  --sidebar: #111111;
-  --sidebar-foreground: #f5f5f5;
-  --sidebar-primary: #f5f5f5;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: rgba(249, 54, 60, 0.2);
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #f9363c;
-  --extension-accent: #f9363c;
+  --chart-3: rgba(247, 245, 255, 0.45);
+  --chart-4: #ccc4fd;
+  --chart-5: #191243;
+  --sidebar: #191243;
+  --sidebar-foreground: #f7f5ff;
+  --sidebar-primary: #afa2fc;
+  --sidebar-primary-foreground: #191243;
+  --sidebar-accent: rgba(175, 162, 252, 0.18);
+  --sidebar-accent-foreground: #f7f5ff;
+  --sidebar-border: rgba(175, 162, 252, 0.12);
+  --sidebar-ring: #7e66ec;
+  --extension-accent: #afa2fc;
   --extension-success: #34c759;
-  --btn-disabled: #3a3a3c;
+  --btn-disabled: #3a366b;
 }
 
 @layer base {
@@ -327,11 +341,17 @@ body.brume-popup {
   html {
     @apply font-sans;
   }
+  ::selection,
+  *::selection {
+    background-color: rgba(175, 162, 252, 0.32);
+    color: #191243;
+  }
   .dark ::selection,
   .dark *::selection {
-    background-color: rgba(249, 54, 60, 0.25);
+    background-color: rgba(175, 162, 252, 0.28);
+    color: #f7f5ff;
   }
-  /* Firefox: strip native control chrome (extension parity) */
+  /* Firefox: strip native control chrome */
   button,
   input,
   textarea {

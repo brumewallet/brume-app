@@ -5,5 +5,6 @@ export interface PortfolioTokenRow {
   amountRaw: string;
   decimals: number;
   logoUri: string | null;
+  verified?: boolean;
   tokenProgram?: "token" | "token-2022";
 }

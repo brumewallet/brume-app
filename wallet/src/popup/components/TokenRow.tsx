@@ -1,15 +1,11 @@
+import { motion } from "motion/react";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatTokenListAmount } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { PrivateLegAvatarBadge } from "./PrivateLegAvatarBadge";
 import { VerifiedBadge } from "./VerifiedBadge";
 
-function TokenAvatar(props: {
-  symbol: string;
-  logoUri?: string | null;
-  className?: string;
-}) {
+function TokenAvatar(props: { symbol: string; logoUri?: string | null; className?: string }) {
   const { symbol, logoUri, className = "h-10 w-10" } = props;
   const [imgFailed, setImgFailed] = useState(false);
   const letter = symbol.charAt(0).toUpperCase();
@@ -26,17 +22,8 @@ function TokenAvatar(props: {
   }
 
   return (
-    <div
-      className={`relative shrink-0 rounded-full bg-background ring-2 ring-primary/35 ${className}`}
-    >
-      <div
-        className="absolute inset-1 rounded-full"
-        style={{
-          background:
-            "conic-gradient(from 200deg, rgba(249,54,60,0.35), rgba(0,0,0,0.08), rgba(249,54,60,0.35))",
-        }}
-      />
-      <div className="absolute inset-[3px] flex items-center justify-center rounded-full bg-card text-[11px] font-bold text-foreground">
+    <div className={`relative shrink-0 rounded-full bg-background ring-2 ring-primary/25 ${className}`}>
+      <div className="absolute inset-[3px] flex items-center justify-center rounded-full bg-muted text-[11px] font-bold text-foreground">
         {letter}
       </div>
     </div>
@@ -46,9 +33,6 @@ function TokenAvatar(props: {
 export type TokenRowNavState = {
   sendBackTo?: string;
   tokenDetailBackTo?: string;
-  shieldTokenMint?: string;
-  shieldInitialMode?: "shield" | "unshield";
-  fromPrivateBalance?: boolean;
 };
 
 export function TokenRow(props: {
@@ -62,8 +46,6 @@ export function TokenRow(props: {
   logoUri?: string | null;
   verified?: boolean;
   fiatUsdApprox?: number | null;
-  privateBalanceRaw?: string | null;
-  forceShieldBadge?: boolean;
   hideBalance?: boolean;
 }) {
   const pixelFilterUid = useId().replace(/:/g, "");
@@ -71,41 +53,16 @@ export function TokenRow(props: {
   const pixelSmId = `brume-pixel-row-${pixelFilterUid}-sm`;
 
   const decimals = props.decimals ?? 9;
-  const raw =
-    props.amountRaw != null && props.amountRaw !== ""
-      ? BigInt(props.amountRaw)
-      : 0n;
+  const raw = props.amountRaw != null && props.amountRaw !== "" ? BigInt(props.amountRaw) : 0n;
   const divisor = 10n ** BigInt(decimals);
   const display = Number(raw) / Number(divisor);
   const verified = props.verified ?? false;
   const hidden = props.hideBalance === true;
 
-  let privateHuman: number | null = null;
-  if (props.privateBalanceRaw != null && props.privateBalanceRaw !== "") {
-    try {
-      privateHuman =
-        Number(BigInt(props.privateBalanceRaw)) /
-        Number(10n ** BigInt(decimals));
-    } catch {
-      privateHuman = 0;
-    }
-  }
-
-  const showPrivateBadge =
-    props.forceShieldBadge === true ||
-    (props.forceShieldBadge !== false &&
-      privateHuman != null &&
-      privateHuman > 0);
-
   const inner = (
     <>
       {hidden ? (
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute h-0 w-0 overflow-hidden"
-          width={0}
-          height={0}
-        >
+        <svg aria-hidden className="pointer-events-none absolute h-0 w-0 overflow-hidden" width={0} height={0}>
           <defs>
             <filter id={pixelLgId} x="0" y="0" width="100%" height="100%">
               <feFlood x="4" y="4" height="2" width="2" />
@@ -124,27 +81,15 @@ export function TokenRow(props: {
           </defs>
         </svg>
       ) : null}
-      <div className="relative shrink-0 overflow-visible">
-        <TokenAvatar symbol={props.symbol} logoUri={props.logoUri} />
-        {showPrivateBadge ? <PrivateLegAvatarBadge /> : null}
-      </div>
+      <TokenAvatar symbol={props.symbol} logoUri={props.logoUri} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-[15px] font-semibold text-foreground">
-            {props.name}
-          </span>
+          <span className="text-[15px] font-semibold text-foreground">{props.name}</span>
           {verified ? <VerifiedBadge /> : null}
         </div>
         <p
-          className={cn(
-            "text-[13px] text-muted-foreground",
-            hidden && "text-[#c8c8cc]",
-          )}
-          style={
-            hidden
-              ? { filter: `url(#${pixelSmId})`, userSelect: "none" }
-              : undefined
-          }
+          className={cn("text-[13px] text-muted-foreground", hidden && "opacity-30")}
+          style={hidden ? { filter: `url(#${pixelSmId})`, userSelect: "none" } : undefined}
         >
           {formatTokenListAmount(display)} {props.symbol}
         </p>
@@ -152,15 +97,8 @@ export function TokenRow(props: {
       <div className="shrink-0 text-right">
         {props.fiatUsdApprox != null ? (
           <p
-            className={cn(
-              "text-[15px] font-medium text-foreground",
-              hidden && "text-[#bbbbc0]",
-            )}
-            style={
-              hidden
-                ? { filter: `url(#${pixelLgId})`, userSelect: "none" }
-                : undefined
-            }
+            className={cn("text-[15px] font-medium text-foreground", hidden && "opacity-30")}
+            style={hidden ? { filter: `url(#${pixelLgId})`, userSelect: "none" } : undefined}
           >
             ${props.fiatUsdApprox.toFixed(2)}
           </p>
@@ -171,31 +109,25 @@ export function TokenRow(props: {
     </>
   );
 
-  const className =
-    "flex items-center gap-3 rounded-2xl bg-card px-3 py-3 ring-1 ring-border/60 transition-colors duration-200 hover:ring-border";
+  const rowClass =
+    "flex items-center gap-3 rounded-2xl border border-border/50 bg-card/60 px-3 py-3 backdrop-blur-sm transition-colors duration-150 hover:bg-card/80";
 
-  const privateTitle = showPrivateBadge
-    ? props.forceShieldBadge
-      ? "Shielded balance — tap to send"
-      : "This token has a private (shielded) balance"
-    : undefined;
+  const motionProps = {
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    transition: { type: "spring" as const, stiffness: 220, damping: 24 },
+    whileTap: props.to ? { scale: 0.98 } : {},
+  };
 
   if (props.to) {
     return (
-      <Link
-        to={props.to}
-        state={props.navState}
-        title={privateTitle}
-        className={`${className} relative block cursor-pointer no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring`}
-      >
-        {inner}
-      </Link>
+      <motion.div {...motionProps}>
+        <Link to={props.to} state={props.navState} className={`${rowClass} relative block cursor-pointer no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring`}>
+          {inner}
+        </Link>
+      </motion.div>
     );
   }
 
-  return (
-    <div className={`${className} relative`} title={privateTitle}>
-      {inner}
-    </div>
-  );
+  return <motion.div {...motionProps} className={`${rowClass} relative`}>{inner}</motion.div>;
 }

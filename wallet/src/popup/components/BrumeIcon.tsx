@@ -17,6 +17,7 @@ export function BrumeIcon({
       icon={icon}
       size={size}
       strokeWidth={STROKE}
+      color="currentColor"
       className={className}
       aria-hidden
     />

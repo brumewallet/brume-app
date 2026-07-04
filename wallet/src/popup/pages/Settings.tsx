@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import {
   Check,
   ChevronDown,
@@ -7,13 +8,14 @@ import {
   ChevronUp,
   Globe,
   Lock,
+  Monitor,
+  Moon,
   Server,
+  Sun,
   Timer,
   Users,
 } from "lucide-react";
 import {
-  EXPLORER_OPTIONS,
-  type ExplorerId,
   type NetworkId,
 } from "@/shared/constants";
 import type { ExtensionMessage } from "@/shared/types";
@@ -197,8 +199,7 @@ export function Settings() {
   const [rpcInput, setRpcInput] = useState("");
   const [rpcSaveErr, setRpcSaveErr] = useState<string | null>(null);
   const [savingRpc, setSavingRpc] = useState(false);
-  const [savingExplorer, setSavingExplorer] = useState(false);
-  const [showPrivateKey, setShowPrivateKey] = useState(false);
+const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [revealKey, setRevealKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
@@ -206,6 +207,9 @@ export function Settings() {
   const [uiSurface, setUiSurfaceState] = useState<UiSurface>("sidepanel");
   const [switchMessage, setSwitchMessage] = useState<string | null>(null);
   const [lockTimeout, setLockTimeout] = useState(15);
+  const [theme, setTheme] = useState<"system" | "light" | "dark">(
+    () => (localStorage.getItem("brume:theme") as "system" | "light" | "dark") ?? "system",
+  );
   const [networkChoice, setNetworkChoice] = useState<NetworkId | null>(null);
 
   const [pkPassword, setPkPassword] = useState("");
@@ -271,17 +275,6 @@ export function Settings() {
     // Don't block the UI; keep existing cached data visible while background refreshes.
     void msg.setNetwork(n).then(() => refresh());
     navigate("/", { replace: true });
-  }
-
-  async function selectExplorer(id: ExplorerId) {
-    if (!state || state.explorerId === id) return;
-    setSavingExplorer(true);
-    try {
-      await msg.setExplorerId(id);
-      await refresh();
-    } finally {
-      setSavingExplorer(false);
-    }
   }
 
   async function saveRpc() {
@@ -359,8 +352,13 @@ export function Settings() {
   }
 
   return (
-    <div className="relative flex flex-col gap-5 px-3 pb-24 pt-4">
-      <h1 className={cn(font, "px-1 text-[18px] font-semibold leading-7 text-foreground")}>
+    <motion.div
+      className="relative flex flex-col gap-5 px-3 pb-24 pt-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
+    >
+      <h1 className={cn(font, "px-1 text-[18px] font-semibold leading-7 text-foreground")} style={{ fontFamily: "var(--font-display)" }}>
         Settings
       </h1>
         <Section label="Network">
@@ -385,7 +383,7 @@ export function Settings() {
                 type="button"
                 className={cn(
                   font,
-                  "flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[12px] font-medium leading-4 text-foreground",
+                  "flex items-center gap-1.5 rounded-xl border border-border bg-card px-2.5 py-1 text-[12px] font-medium leading-4 text-foreground",
                   "transition-colors hover:bg-secondary active:scale-[0.98]",
                 )}
                 onClick={(e) => {
@@ -399,7 +397,7 @@ export function Settings() {
                 {copiedAddress ? (
                   <>
                     <Check
-                      className="h-3.5 w-3.5 text-[#34C759]"
+                      className="h-3.5 w-3.5 text-[color:var(--extension-success)]"
                       strokeWidth={2}
                     />
                   </>
@@ -460,7 +458,7 @@ export function Settings() {
                     disabled={pkBusy || !pkPassword}
                     className={cn(
                       font,
-                      "h-10 w-full rounded-full bg-primary text-[13px] font-medium text-primary-foreground transition-opacity disabled:opacity-40",
+                      "h-10 w-full rounded-2xl bg-primary text-[13px] font-medium text-primary-foreground transition-opacity disabled:opacity-40",
                     )}
                   >
                     {pkBusy ? "Checking…" : "Continue"}
@@ -535,28 +533,6 @@ export function Settings() {
             title="Manage accounts"
             onClick={() => navigate("/accounts")}
           />
-        </Section>
-
-        <Section label="Explorer">
-          <div className="mx-3 mb-2 mt-1 grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1">
-            {EXPLORER_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                disabled={savingExplorer}
-                onClick={() => void selectExplorer(opt.id)}
-                className={cn(
-                  font,
-                  "rounded-lg border-none px-2 py-2 text-[12px] font-medium leading-4 transition-all duration-150 disabled:opacity-50",
-                  state.explorerId === opt.id
-                    ? "bg-card text-card-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-                    : cn("bg-transparent", secondary),
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
         </Section>
 
         <Section label="RPC">
@@ -670,6 +646,37 @@ export function Settings() {
             value={uiSurface}
             onChange={(v) => void onSurfaceChange(v)}
           />
+          <div className="px-4">
+            <div className="flex items-center justify-between py-2.5">
+              <div className="flex items-center gap-3">
+                {theme === "dark" ? (
+                  <Moon className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={2} />
+                ) : theme === "light" ? (
+                  <Sun className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={2} />
+                ) : (
+                  <Monitor className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={2} />
+                )}
+                <span className={cn(font, "text-[14px] font-normal leading-5 text-foreground")}>
+                  Appearance
+                </span>
+              </div>
+            </div>
+          </div>
+          <SegmentedControl
+            options={[
+              { value: "system" as const, label: "System" },
+              { value: "light" as const, label: "Light" },
+              { value: "dark" as const, label: "Dark" },
+            ]}
+            value={theme}
+            onChange={(v) => {
+              setTheme(v);
+              localStorage.setItem("brume:theme", v);
+              const mq = window.matchMedia("(prefers-color-scheme: dark)");
+              const dark = v === "dark" || (v === "system" && mq.matches);
+              document.documentElement.classList.toggle("dark", dark);
+            }}
+          />
           <SettingsRow
             icon={<Lock className="h-[18px] w-[18px]" strokeWidth={2} />}
             title="Lock now"
@@ -726,6 +733,6 @@ export function Settings() {
           </span>
         </button>
       ) : null}
-    </div>
+    </motion.div>
   );
 }

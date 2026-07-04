@@ -93,9 +93,15 @@ importers:
       '@brume/shared':
         specifier: workspace:*
         version: link:../shared
+      '@fontsource/cal-sans':
+        specifier: ^5.2.3
+        version: 5.2.3
       '@fontsource/geist-sans':
         specifier: ^5.2.5
         version: 5.2.5
+      '@fontsource/onest':
+        specifier: ^5.2.11
+        version: 5.2.11
       '@hugeicons/core-free-icons':
         specifier: ^4.1.1
         version: 4.1.1
@@ -104,7 +110,7 @@ importers:
         version: 1.1.6(react@19.2.5)
       '@magicblock-labs/ephemeral-rollups-sdk':
         specifier: 0.8.8
-        version: 0.8.8(bufferutil@4.1.0)
+        version: 0.8.8(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       '@noble/hashes':
         specifier: ^1.7.1
         version: 1.8.0
@@ -572,8 +578,14 @@ packages:
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
+  '@fontsource/cal-sans@5.2.3':
+    resolution: {integrity: sha512-cY9d2LWfzzge3jSgh2IJmNEJdubuPnjfct/5Q/L/4Q5W9LlXRRZO403P0c3i1iPH4Y+IQ0gHgnJroPzL3KuxQQ==}
+
   '@fontsource/geist-sans@5.2.5':
     resolution: {integrity: sha512-anllOHyJbElRs9fV15TeDRqAeb1IKm4bSknPl6ZMoyPTx1BBy7logudcUwpNjmQLkzn4Q0JGQLRCUKJYoyST6A==}
+
+  '@fontsource/onest@5.2.11':
+    resolution: {integrity: sha512-YDOHuJ+HFf4rl6+vBzEoAGul+GyEOIlziepq+7UDT4839LyiFU1clVZqNmqmCRjwWidPTMUJIv1k9e+5UtuQOw==}
 
   '@hono/node-server@1.19.11':
     resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
@@ -4205,7 +4217,11 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
+  '@fontsource/cal-sans@5.2.3': {}
+
   '@fontsource/geist-sans@5.2.5': {}
+
+  '@fontsource/onest@5.2.11': {}
 
   '@hono/node-server@1.19.11(hono@4.12.12)':
     dependencies:
@@ -4367,7 +4383,7 @@ snapshots:
 
   '@kurkle/color@0.3.4': {}
 
-  '@magicblock-labs/ephemeral-rollups-sdk@0.8.8(bufferutil@4.1.0)':
+  '@magicblock-labs/ephemeral-rollups-sdk@0.8.8(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
     dependencies:
       '@phala/dcap-qvl': 0.3.9
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
