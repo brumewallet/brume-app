@@ -1,12 +1,12 @@
 
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import {
   deriveCommitment,
   derivePool,
+  deriveTreasury,
   deriveVault,
   initializePoolIx,
-  LocalTeeSigner,
   POOL_PROGRAM_ID,
 } from "@brume/sdk";
 import type { NetworkId } from "@/shared/constants";
@@ -18,8 +18,9 @@ const DEV_TEE_SEED = new Uint8Array([
   59, 103, 53, 173, 14, 93, 85, 118, 187, 203, 244, 110, 11, 174, 175, 47,
 ]);
 
-export function getDevTeeSigner(): LocalTeeSigner {
-  return new LocalTeeSigner(DEV_TEE_SEED);
+// The SDK doesn't export a signer class — attestationIx just wants the Keypair directly.
+export function getDevTeeKeypair(): Keypair {
+  return Keypair.fromSeed(DEV_TEE_SEED);
 }
 
 export async function isBrumePoolInitialized(
@@ -35,16 +36,19 @@ export function buildInitializePoolTransaction(
   payer: PublicKey,
   mint: PublicKey,
 ): Transaction {
-  const [pool, poolBump] = derivePool(mint);
+  const [pool, bump] = derivePool(mint);
   const [vault, vaultBump] = deriveVault(mint);
+  const [treasury, treasuryBump] = deriveTreasury(pool);
   return new Transaction().add(
     initializePoolIx({
       payer,
       pool,
-      poolBump,
+      bump,
       mint,
       vault,
       vaultBump,
+      treasury,
+      treasuryBump,
     }),
   );
 }
