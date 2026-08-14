@@ -9,8 +9,6 @@ function rawAmountBigInt(amountRaw: string | undefined): bigint {
   }
 }
 
-// Descending by raw on-chain balance; tie-break by mint for stable order.
-
 export function sortPortfolioTokensByBalanceDesc(
   tokens: readonly PortfolioTokenRow[],
 ): PortfolioTokenRow[] {

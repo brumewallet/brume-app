@@ -40,7 +40,6 @@ export async function GET(
     return NextResponse.json({ error: "mint is required" }, { status: 400 });
   }
 
-  // Try Jupiter token list first (fast, covers most mainnet tokens)
   const jupTokens = await getJupiterTokens();
   if (jupTokens?.has(mint)) {
     const t = jupTokens.get(mint)!;

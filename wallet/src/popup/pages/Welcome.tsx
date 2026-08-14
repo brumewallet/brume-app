@@ -27,7 +27,7 @@ function BrumeLogoMark({ size = 44 }: { size?: number }) {
 export function Welcome() {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
-      {/* Upper — logo + copy */}
+      {}
       <div className="relative flex flex-1 flex-col items-center justify-center px-8 pb-6 pt-12">
         <motion.div
           className="mb-6 flex items-center justify-center text-primary"
@@ -72,7 +72,7 @@ export function Welcome() {
         </motion.p>
       </div>
 
-      {/* Bottom — CTAs */}
+      {}
       <motion.div
         className="relative px-5 pb-7 pt-3"
         initial={{ opacity: 0, y: 18 }}

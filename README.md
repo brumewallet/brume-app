@@ -6,8 +6,8 @@ Solana wallet as a Chrome MV3 extension, plus a Next.js API for portfolio, activ
 
 | Package | Path | Role |
 | --- | --- | --- |
-| `brume-wallet` | `wallet/` | Extension — React UI, service worker, injected `window.solana` |
-| `@brume/api` | `app/` | Next.js 15 — Helius DAS, Prisma + Supabase Postgres |
+| `brume-wallet` | `wallet/` | Extension - React UI, service worker, injected `window.solana` |
+| `@brume/api` | `app/` | Next.js 15 - Helius DAS, Prisma + Supabase Postgres |
 | `@brume/shared` | `shared/` | Types and constants for wallet + API |
 
 ## Prerequisites
@@ -62,7 +62,7 @@ pnpm dev                      # :3001
 | `HELIUS_API_KEY` | No | DAS + richer history; else public RPC |
 | `DEVNET_RPC_URL` / `MAINNET_RPC_URL` | No | Override defaults |
 
-Password in URLs must be percent-encoded. Pooler URL differs from direct — see [Supabase connection docs](https://supabase.com/docs/guides/database/connecting-to-postgres).
+Password in URLs must be percent-encoded. Pooler URL differs from direct - see [Supabase connection docs](https://supabase.com/docs/guides/database/connecting-to-postgres).
 
 ## API Routes
 
@@ -92,9 +92,9 @@ Create wallet > devnet > airdrop > send > on a `https://` page: `await window.so
 
 ## Troubleshooting
 
-- **Service worker error (e.g. code 15)** — `chrome://extensions` > Errors on the extension card; after git pull: `pnpm install`, rebuild, reload extension.
-- **`process is not defined` in wallet** — Node-only dep in the bundle; wallet should use browser-safe crypto (`@noble/*`, `@scure/*`). Check `vite.config.ts` aliases/defines.
-- **403 / CORS on API** — Use API on `localhost:3001`; extension `host_permissions` must allow your dev origin.
+- **Service worker error (e.g. code 15)** - `chrome://extensions` > Errors on the extension card; after git pull: `pnpm install`, rebuild, reload extension.
+- **`process is not defined` in wallet** - Node-only dep in the bundle; wallet should use browser-safe crypto (`@noble/*`, `@scure/*`). Check `vite.config.ts` aliases/defines.
+- **403 / CORS on API** - Use API on `localhost:3001`; extension `host_permissions` must allow your dev origin.
 
 ## Security
 
@@ -107,13 +107,13 @@ These are the brand-facing answers kept consistent across the codebase and any p
 ### Privacy
 
 **Is Brume a mixer?**
-No. The shielded balance feature moves tokens between your public wallet and a private balance. It does not shuffle or tumble funds. The shielding approach is bounded by Solana's public ledger — see the Privacy Limits section in the docs for what is and is not protected.
+No. The shielded balance feature moves tokens between your public wallet and a private balance. It does not shuffle or tumble funds. The shielding approach is bounded by Solana's public ledger - see the Privacy Limits section in the docs for what is and is not protected.
 
 **What does "privacy by default" mean?**
 When you send through the Shield path, your public wallet balance does not appear in the on-chain trace to the recipient. Privacy is the default flow, not an opt-in. Transparent transfers are still available if you need them.
 
 **Is Solana anonymous by default?**
-No. Every Solana transaction — sender, recipient, amount, token — is written to a public ledger and indexed by chain analytics within seconds. Brume's shield feature is what adds a private path on top of that.
+No. Every Solana transaction - sender, recipient, amount, token - is written to a public ledger and indexed by chain analytics within seconds. Brume's shield feature is what adds a private path on top of that.
 
 **Is Shield available on mainnet?**
 Not during the current phase. Shield is supported on Solana devnet while the feature is in early development. Mainnet support is on the roadmap.
@@ -142,4 +142,4 @@ You can generate a new HD wallet with a 12 or 24-word seed phrase, or import an 
 
 ## License
 
-No root license file yet — add one before publishing.
+No root license file yet - add one before publishing.

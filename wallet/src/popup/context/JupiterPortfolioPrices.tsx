@@ -21,12 +21,8 @@ import { useWalletStore } from "../store";
 const REFRESH_MS = 45_000;
 
 export type JupiterPortfolioPricing = {
-    // Sum of priced SOL + SPL holdings; null until first Jupiter response.
 
   totalUsdApprox: number | null;
-    // 
-  // Same portfolio as `totalUsdApprox`, expressed in SOL at Jupiter SOL/USD.
-  // Null until prices load; then 0 if nothing priced.
 
   totalPortfolioSolApprox: number | null;
   solFiatApprox: number | null;
@@ -37,9 +33,6 @@ export type JupiterPortfolioPricing = {
 
 const JupiterPortfolioPricesContext =
   createContext<JupiterPortfolioPricing | null>(null);
-
-// Devnet: we still fetch Jupiter USD prices for any known mints so
-// SOL + mainnet-minted tokens show value estimates even on devnet.
 
 function usePortfolioPricingEngine(input: {
   balanceSolBaseUnits: string | null | undefined;

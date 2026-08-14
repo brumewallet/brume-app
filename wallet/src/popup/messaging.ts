@@ -223,8 +223,6 @@ export function sendSpl(
   });
 }
 
-// `amount` is a human decimal string, or `all` to burn everything and close the ATA.
-
 export function burnSpl(mint: string, amount: string) {
   const requestId = crypto.randomUUID();
   return sendMessage<{ signature: string }>({
@@ -282,8 +280,6 @@ export function getShieldBalances(mint: string) {
     payload: { mint },
   });
 }
-
-// Parallel private (ephemeral) balance per mint for portfolio rows.
 
 export function getShieldBalancesBatch(mints: string[]) {
   const requestId = crypto.randomUUID();

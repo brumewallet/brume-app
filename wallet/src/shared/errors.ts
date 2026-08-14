@@ -4,8 +4,6 @@ import {
   SolanaJSONRPCError,
 } from "@solana/web3.js";
 
-// Wallet Standard style codes (subset) from SOLANA_WALLET.md
-
 export const WalletErrorCodes = {
   WalletNotReady: 4001,
   WalletConnectionError: 4002,
@@ -39,8 +37,6 @@ function stringifyUnknown(value: unknown): string {
     return String(value);
   }
 }
-
-// For console / overlays that stringify the 2nd `console.error` arg as `[object Object]`.
 
 export function serializeUnknownForLog(value: unknown): unknown {
   if (value === null || typeof value === "undefined") return value;
@@ -86,16 +82,12 @@ function errorIsSolanaJsonRpc(e: unknown): e is SolanaJSONRPCError {
   return e instanceof Error && e.name === "SolanaJSONRPCError";
 }
 
-// 
-// Turn any thrown value into a user-visible string. Handles:
-// - Solana `SendTransactionError` when RPC `error.message` is an object (shows as "[object Object]")
 // - Plain `{ message }` / `{ error: { message, issues } }` rejects
 
 export function messageFromUnknown(e: unknown): string {
   if (e instanceof Error) {
     const ex = e as ErrorWithSolanaMeta;
     const rawMsg = ex.message;
-    // @solana/web3.js SendTransactionError already embeds simulation/send details + log hint.
     if (ex.name === "SendTransactionError" && typeof rawMsg === "string" && rawMsg.length > 0) {
       return rawMsg;
     }
@@ -167,12 +159,10 @@ export function messageFromUnknown(e: unknown): string {
   return String(e);
 }
 
-// Rich, user-visible message for failed sends/confirms; pass Connection when available for getLogs.
 export async function detailedTransactionFailureMessage(
   e: unknown,
   rpcConnection: Connection | null,
 ): Promise<string> {
-  // Vite can bundle web3 twice — `instanceof SendTransactionError` may be false; use duck typing.
   if (errorHasGetLogs(e)) {
     const ste = e;
     let lines: string[] = [];

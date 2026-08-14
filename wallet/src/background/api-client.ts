@@ -127,10 +127,7 @@ export async function fetchBrumeTokenMetadata(
   return (await res.json()) as TokenMetadataApiResponse;
 }
 
-// 
-// Server-built unsigned PER transfer (private ephemeral → ephemeral).
-// Returns `null` when the Brume route is missing (404) or returns a non-JSON error
-// page — callers should fall back to Payments API directly.
+// page - callers should fall back to Payments API directly.
 
 export async function fetchBrumePerTransferUnsigned(params: {
   from: string;

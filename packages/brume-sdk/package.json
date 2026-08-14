@@ -1,0 +1,22 @@
+{
+  "name": "@brume/sdk",
+  "version": "0.1.0",
+  "description": "Client SDK for the Brume shielded pool and key registry",
+  "type": "module",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.6.0",
+    "@noble/hashes": "^1.5.0",
+    "@solana/web3.js": "^1.98.0"
+  },
+  "devDependencies": {
+    "@solana/spl-token": "^0.4.14",
+    "@types/bun": "^1.1.0",
+    "typescript": "^5.6.0"
+  }
+}

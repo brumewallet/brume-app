@@ -2,8 +2,6 @@ import type { ExplorerId, NetworkId } from "./constants";
 import type { PortfolioTokenRow } from "@brume/shared";
 export type { PortfolioTokenRow };
 
-// Extension ↔ popup / content message envelope
-
 export type ExtensionMessage =
   | { type: "GET_STATE"; requestId: string }
   | { type: "GET_STATE_RESPONSE"; requestId: string; payload: WalletUiState }
@@ -84,10 +82,8 @@ export type ExtensionMessage =
       payload: {
         mint: string;
         to: string;
-                // Human-readable amount (decimal string), same style as SOL send.
 
         amount: string;
-                // Spend from PER ephemeral shielded balance (not base ATA).
 
         fromPrivateBalance?: boolean;
       };
@@ -97,7 +93,6 @@ export type ExtensionMessage =
       requestId: string;
       payload: {
         mint: string;
-                // Human decimal amount, or `all` to burn full balance and close ATA.
 
         amount: string;
       };
@@ -219,33 +214,23 @@ export interface WalletUiState {
   hasVault: boolean;
   locked: boolean;
   publicKey: string | null;
-    // Unlocked or last-selected account (for display while locked).
 
   activeAccountId: string | null;
   accountLabel: string | null;
   accounts: WalletAccountSnapshot[];
   network: NetworkId;
-    // Integer string: SOL balance in smallest units (10⁻⁹ SOL).
 
   balanceSolBaseUnits: string | null;
-    // Last balance/RPC failure (e.g. public RPC 403 from extension context).
 
   rpcError: string | null;
-    // Last Brume indexer (Next API) failure — portfolio metadata; not the Solana RPC.
 
   indexerError: string | null;
-    // When set, used instead of the built-in endpoint for this network.
 
   rpcUrlOverride: string | null;
-    // Preferred block explorer for transaction and account links.
 
   explorerId: ExplorerId;
-    // Fungible tokens from Brume API; null if none / not loaded.
 
   portfolioTokens: PortfolioTokenRow[] | null;
-    // 
-  // Last known shielded (ephemeral) balances from MagicBlock Payments API,
-  // keyed by mint (smallest units as decimal strings). Persisted in extension storage.
 
   shieldedBalancesByMint: Record<string, string>;
   simpleMode: boolean;
@@ -253,13 +238,11 @@ export interface WalletUiState {
   pendingSign: PendingSignRequest | null;
   blocklist: string[];
   allowlist: string[];
-    // True when the vault can derive another account from the stored BIP39 root (Phantom-style HD).
 
   hdDerivationAvailable: boolean;
 }
 
 export interface PendingConnectRequest {
-    // Matches dApp promise id / approval id in popup
 
   id: string;
   origin: string;
@@ -270,7 +253,6 @@ export interface PendingSignRequest {
     // UI / queue id
 
   id: string;
-    // Original request from injected (for postMessage resolve)
 
   dappRequestId: string;
   kind: "transaction" | "allTransactions" | "message";
@@ -303,8 +285,6 @@ export interface StoredKeystore {
   address: string;
 }
 
-// One Solana account (encrypted secret + per-site connections).
-
 export interface WalletAccount {
   id: string;
   label: string;
@@ -324,10 +304,8 @@ export interface PersistedVault {
   allowlist: string[];
   blocklist: string[];
   simpleMode: boolean;
-    // Encrypted normalized BIP39 phrase for deriving m/44'/501'/n'/0' siblings.
 
   encryptedRootMnemonic?: StoredKeystore;
-    // Next path account index for HD derivation (account 0 uses index 0).
 
   hdNextAccountIndex?: number;
 }

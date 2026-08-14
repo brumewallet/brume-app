@@ -103,7 +103,7 @@ export function TokenRow(props: {
             ${props.fiatUsdApprox.toFixed(2)}
           </p>
         ) : (
-          <p className="text-xs text-muted-foreground">—</p>
+          <p className="text-xs text-muted-foreground">-</p>
         )}
       </div>
     </>

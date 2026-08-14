@@ -59,7 +59,7 @@ After pulling changes, run **`pnpm install`**, **`pnpm run build`**, then **Relo
 
 ## Project layout
 
-- `src/background/` — keystore, RPC, signing, approvals, persistence.
-- `src/content/` — bridge + main-world `injected` script (`?script&module` via CRXJS).
-- `src/popup/` — UI (HashRouter, 360×600 layout).
-- `src/shared/` — types, keystore, wallet-core, crypto helpers.
+- `src/background/` - keystore, RPC, signing, approvals, persistence.
+- `src/content/` - bridge + main-world `injected` script (`?script&module` via CRXJS).
+- `src/popup/` - UI (HashRouter, 360×600 layout).
+- `src/shared/` - types, keystore, wallet-core, crypto helpers.

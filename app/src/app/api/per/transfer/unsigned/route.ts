@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-// Proxy to MagicBlock PER ephemeral service — the wallet sends unsigned transfers
 // through the Next.js app so it doesn't have to embed PER credentials.
 const PER_DEVNET = "https://devnet-as.magicblock.app";
 const PER_MAINNET = "https://tee.magicblock.app";

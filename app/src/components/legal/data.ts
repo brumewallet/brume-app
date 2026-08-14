@@ -1,16 +1,4 @@
-/**
- * Legal content for the Terms of Service and Privacy Policy pages.
- *
- * ⚠️  DRAFT TEMPLATE: NOT LEGAL ADVICE.
- * Before publishing, have counsel review, and replace every placeholder below:
- *   - company.legalEntity   (registered contracting entity)
- *   - company.address       (registered business address)
- *   - company.governingLaw  (chosen jurisdiction)
- *   - effectiveDate / version on each document
- *   - confirm email addresses resolve (legal@, privacy@, hello@)
- * Items marked "[verify]" depend on facts only you can confirm
- * (e.g. whether analytics run, which sub-processors are live, EU representative).
- */
+
 
 export type LegalBlock =
   | { type: "p"; text: string }

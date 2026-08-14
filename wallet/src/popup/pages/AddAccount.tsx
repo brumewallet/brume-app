@@ -87,7 +87,7 @@ export function AddAccount() {
           title="Add account (same recovery phrase)"
           subtitle={
             hdOk
-              ? "Next address: m/44'/501'/…'/0' — HD wallet like Phantom / Solflare"
+              ? "Next address: m/44'/501'/…'/0' - HD wallet like Phantom / Solflare"
               : "Not available for this wallet (no stored phrase for derivation)"
           }
           to={hdOk ? "/accounts/add-hd" : undefined}

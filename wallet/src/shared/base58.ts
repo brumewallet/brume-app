@@ -1,7 +1,5 @@
 import { base58 } from "@scure/base";
 
-// Encode bytes to Base58 (Solana / Bitcoin alphabet).
-
 export function encodeBase58(bytes: Uint8Array): string {
   return base58.encode(bytes);
 }

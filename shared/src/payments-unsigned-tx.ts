@@ -1,6 +1,3 @@
-// 
-// MagicBlock Private Payments API returns legacy unsigned transactions.
-// Some fields may be snake_case; `sendTo` is sometimes omitted for PER paths.
 
 
 export interface UnsignedPaymentTransaction {

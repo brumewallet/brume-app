@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** Half-ring spinner (extension send/processing style). */
 export function ExtensionSendSpinner({ className }: { className?: string }) {
   return (
     <div

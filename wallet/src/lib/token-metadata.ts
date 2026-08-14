@@ -1,8 +1,6 @@
 import type { NetworkId } from "@/shared/constants";
 import rawList from "@token-list/tokens/solana.tokenlist.json";
 
-// Minimal shape from `wallet/token-list/src/tokens/solana.tokenlist.json`.
-
 export interface TokenListEntry {
   readonly chainId: number;
   readonly address: string;
@@ -25,8 +23,6 @@ const CHAIN_FOR_NETWORK: Record<NetworkId, number> = {
   "mainnet-beta": 101,
 };
 
-// Native SOL is shown with metadata from the canonical wrapped SOL mint entry.
-
 export const WRAPPED_SOL_MINT =
   "So11111111111111111111111111111111111111112" as const;
 
@@ -47,9 +43,6 @@ function getRegistry(): Map<string, TokenListEntry> {
   return registry;
 }
 
-// 
-// Resolve token list metadata for a mint on the active cluster.
-// On devnet, if the mint is missing from chain 103, we also try mainnet-beta (101) so
 // well-known mints resolve the same way in every environment.
 
 export function getTokenListEntry(
@@ -66,8 +59,6 @@ export function getTokenListEntry(
   }
   return null;
 }
-
-// Display row for native SOL balance (name differs from “Wrapped SOL” in the registry).
 
 export function getNativeSolDisplay(network: NetworkId) {
   const entry = getTokenListEntry(WRAPPED_SOL_MINT, network);

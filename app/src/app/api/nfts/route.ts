@@ -5,7 +5,6 @@ const RPC: Record<string, string> = {
   "mainnet-beta": "https://rpc.magicblock.app/mainnet",
 };
 
-// If HELIUS_API_KEY is set, use Helius DAS endpoints which have full NFT support.
 const HELIUS_KEY = process.env.HELIUS_API_KEY ?? "";
 console.log("[api/nfts] HELIUS_KEY loaded:", HELIUS_KEY ? `${HELIUS_KEY.slice(0, 8)}…` : "(empty)");
 
@@ -30,13 +29,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const owner = searchParams.get("owner");
   const network = searchParams.get("network") ?? "devnet";
-  // Helius key takes priority — it supports DAS. Falls back to passed rpcUrl, then default.
   const rpcUrl = heliusRpc(network) ?? searchParams.get("rpcUrl") ?? RPC[network] ?? RPC["devnet"];
 
   if (!owner) return NextResponse.json({ error: "owner required" }, { status: 400 });
 
-  // Use Metaplex DAS (Digital Asset Standard) getAssetsByOwner RPC method.
-  // Works on Helius RPC nodes and MagicBlock (which proxies DAS on devnet).
   try {
     const res = await fetch(rpcUrl, {
       method: "POST",
@@ -81,14 +77,12 @@ export async function GET(request: Request) {
     const items = body.result?.items ?? [];
     console.log("[api/nfts] total items from DAS:", items.length, items.map((i) => i.interface));
 
-    // Helius DAS interface values for NFTs (legacy + MPL Core)
     const NFT_IFACES = new Set(["V1_NFT", "LEGACY_NFT", "V2_NFT", "ProgrammableNFT", "V1_PRINT", "MplCoreAsset"]);
 
     const nfts: NftItem[] = items
       .filter((item) => {
         const iface = item.interface ?? "";
         if (NFT_IFACES.has(iface)) return true;
-        // Fallback: token with decimals=0, supply=1
         const decimals = item.token_info?.decimals ?? -1;
         const supply = item.token_info?.supply ?? -1;
         return decimals === 0 && supply === 1;
@@ -106,7 +100,6 @@ export async function GET(request: Request) {
             : iface === "ProgrammableNFT"
               ? "programmable"
               : "legacy";
-        // frozen = permanent_freeze_delegate frozen=true (MPL Core) or top-level is_frozen (legacy)
         const frozen =
           item.is_frozen === true ||
           (item.plugins?.permanent_freeze_delegate?.data?.frozen === true);

@@ -32,8 +32,6 @@ async function deriveAesKey(
   );
 }
 
-// Encrypt 64-byte Solana secret key; returns keystore JSON fields + address.
-
 export async function encryptSecretKey(
   password: string,
   secretKey64: Uint8Array,
@@ -92,8 +90,6 @@ export async function decryptSecretKey(
   );
   return new Uint8Array(plain);
 }
-
-// Encrypt UTF-8 text (e.g. normalized BIP39 phrase for HD root).
 
 export async function encryptUtf8(
   password: string,

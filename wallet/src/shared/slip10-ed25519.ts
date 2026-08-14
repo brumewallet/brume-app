@@ -1,6 +1,3 @@
-// 
-// SLIP-0010 Ed25519 private-key derivation (Solana BIP44 paths), Uint8Array-only.
-// Replaces `ed25519-hd-key` + Node `Buffer` so MV3 service workers never touch `process`.
 
 import { hmac } from "@noble/hashes/hmac";
 import { sha512 } from "@noble/hashes/sha2";

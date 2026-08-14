@@ -19,6 +19,8 @@
     "types": ["chrome", "vite/client"],
     "paths": {
       "@/*": ["./src/*"],
+      "@brume/sdk": ["../../brume-protocol/sdk/src/index.ts"],
+      "@brume/sdk/*": ["../../brume-protocol/sdk/src/*"],
       "@brume/shared": ["../shared/src/index.ts"],
       "@brume/shared/*": ["../shared/src/*"],
       "@token-list/*": ["./token-list/src/*"]

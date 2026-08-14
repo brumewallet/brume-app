@@ -23,7 +23,7 @@ app/src/generated/
 # Vite (wallet)
 .vite/
 .pnpm-store
-# Env & secrets — never commit
+# Env & secrets - never commit
 .env
 .env.*
 !.env.example

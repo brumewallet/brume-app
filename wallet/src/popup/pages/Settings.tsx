@@ -15,9 +15,6 @@ import {
   Timer,
   Users,
 } from "lucide-react";
-import {
-  type NetworkId,
-} from "@/shared/constants";
 import type { ExtensionMessage } from "@/shared/types";
 import { cn } from "@/lib/utils";
 import { applyUiSurfaceClass, readUiSurface, type UiSurface } from "../lib/ui-shell";
@@ -210,7 +207,6 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [theme, setTheme] = useState<"system" | "light" | "dark">(
     () => (localStorage.getItem("brume:theme") as "system" | "light" | "dark") ?? "system",
   );
-  const [networkChoice, setNetworkChoice] = useState<NetworkId | null>(null);
 
   const [pkPassword, setPkPassword] = useState("");
   const [pkBusy, setPkBusy] = useState(false);
@@ -223,10 +219,6 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
   useEffect(() => {
     setRpcInput(state?.rpcUrlOverride ?? "");
   }, [state?.rpcUrlOverride]);
-
-  useEffect(() => {
-    if (state?.network) setNetworkChoice(state.network);
-  }, [state?.network]);
 
   useEffect(() => {
     void readUiSurface().then(setUiSurfaceState);
@@ -270,13 +262,6 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
 
   if (!state) return null;
 
-  async function switchNetwork(n: NetworkId) {
-    setNetworkChoice(n);
-    // Don't block the UI; keep existing cached data visible while background refreshes.
-    void msg.setNetwork(n).then(() => refresh());
-    navigate("/", { replace: true });
-  }
-
   async function saveRpc() {
     setRpcSaveErr(null);
     const trimmed = rpcInput.trim();
@@ -298,7 +283,7 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
     try {
       const ok = await ensureRpcHostPermission(trimmed);
       if (!ok) {
-        setRpcSaveErr("Permission denied — allow host access when Chrome prompts.");
+        setRpcSaveErr("Permission denied - allow host access when Chrome prompts.");
         return;
       }
       await msg.setRpcUrlOverride(trimmed);
@@ -337,7 +322,6 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
       if (mode === "popup") {
         window.setTimeout(() => window.close(), 200);
       } else {
-        // If we're currently a popup, close it so the next open uses the side panel.
         if (prev === "popup") {
           window.setTimeout(() => window.close(), 200);
         } else {
@@ -361,16 +345,6 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
       <h1 className={cn(font, "px-1 text-[18px] font-semibold leading-7 text-foreground")} style={{ fontFamily: "var(--font-display)" }}>
         Settings
       </h1>
-        <Section label="Network">
-          <SegmentedControl
-            options={[
-              { value: "mainnet-beta" as const, label: "Mainnet" },
-              { value: "devnet" as const, label: "Devnet" },
-            ]}
-            value={networkChoice ?? state.network}
-            onChange={(v) => void switchNetwork(v)}
-          />
-        </Section>
 
         <Section label="Wallet">
           {truncatedKey ? (

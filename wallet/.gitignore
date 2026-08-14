@@ -12,7 +12,7 @@ dist-ssr/
 *.local
 .cache/
 
-# Environment and secrets — never commit
+# Environment and secrets - never commit
 .env
 .env.*
 !.env.example

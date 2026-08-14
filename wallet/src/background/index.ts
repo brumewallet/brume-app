@@ -99,7 +99,6 @@ async function applyUiSurface(surface: "popup" | "sidepanel"): Promise<void> {
       await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
     }
   } catch {
-    // Side panel API may be unavailable outside Chrome
   }
 }
 
@@ -230,10 +229,17 @@ function getActiveAccountEntry(vault: PersistedVault): WalletAccount {
   return acc;
 }
 
+async function ensureDevnetVault(v: PersistedVault): Promise<PersistedVault> {
+  if (v.network === "devnet") return v;
+  v.network = "devnet";
+  await saveVault(v);
+  return v;
+}
+
 async function getVaultOrThrow(): Promise<PersistedVault> {
   const v = await loadVault();
   if (!v?.accounts?.length) throw new Error("No wallet found");
-  return v;
+  return ensureDevnetVault(v);
 }
 
 async function fetchAndCacheSolBalance(): Promise<void> {
@@ -342,8 +348,6 @@ async function applyBurnToPortfolioCache(params: {
   cachedPortfolioTokens = tokens.length > 0 ? tokens : null;
 }
 
-// After shield/unshield, Brume indexer can lag; align the affected mint with base RPC (processed).
-
 async function patchPortfolioTokenAmountFromRpcForMint(params: {
   network: NetworkId;
   address: string;
@@ -383,7 +387,6 @@ async function patchPortfolioTokenAmountFromRpcForMint(params: {
 }
 
 async function refreshWalletData(opts?: {
-  // Ignore portfolio cache TTL; refetch from Brume API (refresh button, network/RPC change).
   forcePortfolio?: boolean;
 }): Promise<void> {
   const forcePortfolio = opts?.forcePortfolio === true;
@@ -502,7 +505,10 @@ function scheduleWalletDataRefresh(): void {
 }
 
 async function buildUiState(): Promise<import("@/shared/types").WalletUiState> {
-  const p = await loadVault();
+  let p = await loadVault();
+  if (p?.accounts?.length && p.network !== "devnet") {
+    p = await ensureDevnetVault(p);
+  }
   const hasVault = !!p?.accounts?.length;
   const locked = !sessionKeypair;
   const activeId = p?.activeAccountId ?? null;
@@ -574,7 +580,6 @@ async function notifyTab(tabId: number, msg: unknown): Promise<void> {
   try {
     await chrome.tabs.sendMessage(tabId, msg);
   } catch {
-    // Tab may have closed or no content script.
   }
 }
 
@@ -625,7 +630,6 @@ async function handleMessage(
           return;
         }
         await setAutoLockTimeoutMinutes(minutes);
-        // If we're unlocked, treat changing the timeout as activity.
         if (sessionKeypair) await touchActivity();
         sendResponse({ ok: true, payload: { minutes } });
         return;
@@ -1027,9 +1031,9 @@ async function handleMessage(
 
       case "SET_NETWORK": {
         const p = await getVaultOrThrow();
-        p.network = raw.payload.network;
+        // Brume beta is Devnet-only (Shield, disclosure). Ignore mainnet switches from older UIs.
+        p.network = "devnet";
         await saveVault(p);
-        // Load the cached UI data for the newly-selected network immediately,
         // so the popup can show the right cached balances/portfolio instantly.
         if (sessionKeypair) {
           try {
@@ -1042,8 +1046,7 @@ async function handleMessage(
           }
         }
 
-        // Respond immediately; refresh in background so UI switches instantly.
-        sendResponse({ ok: true, payload: { network: p.network } });
+        sendResponse({ ok: true, payload: { network: "devnet" as const } });
         void refreshWalletData({ forcePortfolio: true });
         return;
       }
@@ -1285,7 +1288,6 @@ async function handleMessage(
             from: sessionKeypair,
             rpcUrlOverride: p.rpcUrlOverride ?? null,
           });
-          // Remove wSOL from portfolio cache since ATA is now closed
           await applyBurnToPortfolioCache({
             network: p.network,
             address: sessionKeypair.publicKey.toBase58(),
@@ -1369,7 +1371,6 @@ async function handleMessage(
           } else {
             throw new Error("Programmable NFT burn not yet supported");
           }
-          // Remove burned NFT from in-memory cache so next GET_NFTS is up-to-date
           if (cachedNfts !== null) {
             cachedNfts = cachedNfts.filter((n) => n.mint !== mint);
           }
@@ -1951,7 +1952,6 @@ async function handleMessage(
               await saveVault(p);
             }
           } catch {
-            // No active account; nothing to disconnect for this origin.
           }
         }
         await notifyTab(tabId, {

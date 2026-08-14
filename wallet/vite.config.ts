@@ -16,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      "@brume/sdk": path.resolve(__dirname, "../../brume-protocol/sdk/src/index.ts"),
       "@brume/shared": path.resolve(__dirname, "../shared/src/index.ts"),
       "@token-list": path.resolve(__dirname, "token-list/src"),
       buffer: path.resolve(__dirname, "node_modules/buffer"),

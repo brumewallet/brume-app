@@ -4,13 +4,13 @@ import { knownTokenSymbol } from "./known-tokens";
 const SOL_DECIMALS = 9;
 
 function shortPk(pk: string | undefined, head = 4, tail = 4): string {
-  if (!pk || pk.length <= head + tail + 1) return pk ?? "—";
+  if (!pk || pk.length <= head + tail + 1) return pk ?? "-";
   return `${pk.slice(0, head)}…${pk.slice(-tail)}`;
 }
 
 function formatSolFromLamports(lamports: number): string {
   const n = lamports / 10 ** SOL_DECIMALS;
-  if (!Number.isFinite(n)) return "—";
+  if (!Number.isFinite(n)) return "-";
   const s = n >= 1 ? n.toFixed(4) : n.toFixed(6);
   return `${s.replace(/\.?0+$/, "")} SOL`;
 }
@@ -19,7 +19,7 @@ function formatTokenAmount(
   raw: string | undefined,
   decimals: number | undefined,
 ): string {
-  if (raw == null || raw === "") return "—";
+  if (raw == null || raw === "") return "-";
   try {
     const d = decimals ?? 0;
     const v = Number(raw) / 10 ** d;
@@ -104,12 +104,12 @@ export function walletActivityDisplay(
       } else if (t.tokenAmount != null && Number.isFinite(t.tokenAmount)) {
         qty = String(t.tokenAmount);
       } else {
-        qty = "—";
+        qty = "-";
       }
       return {
         label: "Burn",
         detail:
-          qty !== "—"
+          qty !== "-"
             ? `${qty} ${sym} destroyed`
             : desc || `${sym} · tokens destroyed`,
       };
@@ -134,12 +134,12 @@ export function walletActivityDisplay(
       } else if (t.tokenAmount != null && Number.isFinite(t.tokenAmount)) {
         qty = String(t.tokenAmount);
       } else {
-        qty = "—";
+        qty = "-";
       }
       return {
         label: "Burn",
         detail:
-          qty !== "—"
+          qty !== "-"
             ? `${qty} ${sym} destroyed`
             : `${sym} · tokens destroyed`,
       };
@@ -181,7 +181,7 @@ export function walletActivityDisplay(
     } else if (t.tokenAmount != null && Number.isFinite(t.tokenAmount)) {
       qty = String(t.tokenAmount);
     } else {
-      qty = "—";
+      qty = "-";
     }
     const mintHint = t.mint ? shortPk(t.mint, 4, 4) : "";
 
@@ -190,7 +190,7 @@ export function walletActivityDisplay(
       return {
         label: `Sent ${sym}`,
         detail:
-          qty !== "—"
+          qty !== "-"
             ? `To ${shortPk(to)} · ${qty} ${sym}`
             : `To ${shortPk(to)}${mintHint ? ` · ${mintHint}` : ""}`,
       };
@@ -199,7 +199,7 @@ export function walletActivityDisplay(
       return {
         label: `Received ${sym}`,
         detail:
-          qty !== "—"
+          qty !== "-"
             ? `From ${shortPk(from)} · ${qty} ${sym}`
             : `From ${shortPk(from)}${mintHint ? ` · ${mintHint}` : ""}`,
       };

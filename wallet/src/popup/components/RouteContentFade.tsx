@@ -2,7 +2,6 @@ import { motion } from "motion/react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Brume spring easing — matches loyal-app / web app motion system. */
 const brumeSpring = [0.32, 0.72, 0, 1] as const;
 
 export const routeContentTransition = {
@@ -51,15 +50,12 @@ const motionByVariant: Record<RouteContentVariant, EnterOnly> = {
     initial: { opacity: 1, y: "100dvh" },
     animate: { opacity: 1, y: 0 },
   },
-    // Manage / add / edit / private-key: full-opacity slide in from the right (same feel as `home`).
 
   accountSubpage: {
     initial: { opacity: 1, x: "100%" },
     animate: { opacity: 1, x: 0 },
   },
 };
-
-// Enter-only motion; `routeKey` remounts this layer so each navigation replays.
 
 export function RouteContentFade(props: {
   routeKey: string;

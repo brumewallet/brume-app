@@ -52,7 +52,7 @@ export function BalanceCard(props: {
         </defs>
       </svg>
 
-      {/* Glass balance card — loyal-app style */}
+      {}
       <motion.div
         className="relative overflow-hidden rounded-3xl border border-border/50 bg-card/60 px-5 py-5 text-center backdrop-blur-xl"
         initial={{ opacity: 0, y: 12 }}
@@ -79,7 +79,7 @@ export function BalanceCard(props: {
         >
           {props.totalUsdApprox != null
             ? `$${props.totalUsdApprox.toFixed(2)}`
-            : "—"}
+            : "-"}
         </p>
 
         {solSubtitle != null && Number.isFinite(solSubtitle) && (

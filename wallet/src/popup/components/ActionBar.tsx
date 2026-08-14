@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ClockOutlineIcon, NFTOutlineIcon, ReceiveIcon, SendButtonIcon } from "@/components/Icons";
+import { ClockOutlineIcon, ReceiveIcon, SendButtonIcon, ShieldIcon } from "@/components/Icons";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -36,6 +36,7 @@ function Tile(props: {
   return <button type="button" className="flex flex-1" onClick={props.onClick}>{inner}</button>;
 }
 
+/** Send · Receive · Shield · Activity */
 export function ActionBar() {
   return (
     <motion.div
@@ -46,7 +47,7 @@ export function ActionBar() {
     >
       <Tile to="/send" icon={<SendButtonIcon />} label="Send" />
       <Tile to="/receive" icon={<ReceiveIcon />} label="Receive" />
-      <Tile to="/nfts" icon={<NFTOutlineIcon />} label="NFTs" />
+      <Tile to="/shield" icon={<ShieldIcon />} label="Shield" />
       <Tile to="/activity" icon={<ClockOutlineIcon />} label="Activity" />
     </motion.div>
   );

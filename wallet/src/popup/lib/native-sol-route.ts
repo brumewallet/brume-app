@@ -1,4 +1,3 @@
-// Path segment for native SOL token detail (`/token/native`).
 
 export const NATIVE_SOL_TOKEN_SEGMENT = "native" as const;
 

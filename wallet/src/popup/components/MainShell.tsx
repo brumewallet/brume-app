@@ -50,13 +50,11 @@ export function MainShell() {
     function touch() {
       if (!alive) return;
       const now = Date.now();
-      // Throttle storage writes in the background (10s).
       if (now - lastTouchRef.current < 10_000) return;
       lastTouchRef.current = now;
       void msg.activityHeartbeat();
     }
 
-    // On mount + navigation, treat as activity.
     touch();
 
     const onPointer = () => touch();
@@ -78,7 +76,6 @@ export function MainShell() {
   }, [pathname]);
 
   useEffect(() => {
-    // If we just unlocked and requested confetti, keep a light skeleton overlay until it completes.
     setShowUnlockSkeleton(isUnlockConfettiActive());
     const t = window.setInterval(() => {
       const active = isUnlockConfettiActive();

@@ -1,4 +1,3 @@
-// Hex string helpers for keystore / debugging.
 
 export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)

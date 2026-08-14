@@ -3,15 +3,6 @@ import { terms } from "@/components/legal/data";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * Waitlist signup endpoint.
- *
- * INTEGRATION POINT: this validates the email and accepts the request, but does
- * not yet persist it. Wire one of the following before launch:
- *   - an email provider (Resend / Loops / Buttondown) audience, or
- *   - a `WaitlistSignup` row via the existing Prisma + Supabase setup.
- * Until then, signups are accepted and logged but not stored.
- */
 export async function POST(req: Request) {
   let email: unknown;
   let acceptedTerms: unknown;
@@ -28,7 +19,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Clickwrap: agreement is required, and the record of it should be stored
   // alongside the signup (who agreed, to which version, when).
   if (acceptedTerms !== true) {
     return NextResponse.json(

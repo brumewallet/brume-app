@@ -1,5 +1,3 @@
-// MV3 service workers forbid dynamic import(); @magicblock-labs/ephemeral-rollups-sdk's
-// getAuthToken uses `import("bs58")`. This is the same flow with static @scure/base.
 import type { PublicKey } from "@solana/web3.js";
 import { encodeBase58 } from "@/shared/base58";
 

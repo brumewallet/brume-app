@@ -72,8 +72,6 @@ function rawToHuman(rawStr: string, dec: number): number {
   return Number(raw) / Number(10n ** BigInt(dec));
 }
 
-// Larger of two integer raw strings; ignores invalid entries.
-
 function maxBigintRaw(a?: string | null, b?: string | null): bigint {
   let x = 0n;
   let y = 0n;
@@ -103,13 +101,10 @@ function tokenHumanBalance(t: PortfolioTokenRow): number {
   }
 }
 
-// Token circle; optional shield badge only on the private / ephemeral leg.
-
 function ShieldTokenAvatar(props: {
   symbol: string;
   logoUri?: string | null;
   size?: "md" | "lg";
-    // When true, show shield icon overlapping the token (private balance side only).
 
   showShieldOverlay?: boolean;
 }) {
@@ -190,10 +185,24 @@ export function Shield() {
   const location = useLocation();
   const { state, refresh } = useWalletStore();
   const { splFiatApprox } = useJupiterPortfolioPrices();
-  const tokens = useMemo(
+  const splTokens = useMemo(
     () => sortPortfolioTokensByBalanceDesc(state?.portfolioTokens ?? []),
     [state?.portfolioTokens],
   );
+  const tokens = useMemo<PortfolioTokenRow[]>(() => {
+    if (!state) return splTokens;
+    const nativeSol = getNativeSolDisplay(state.network);
+    const solRow: PortfolioTokenRow = {
+      mint: SOL_WRAPPED_MINT,
+      symbol: nativeSol.symbol,
+      name: nativeSol.name,
+      amountRaw: state.balanceSolBaseUnits ?? "0",
+      decimals: nativeSol.decimals,
+      logoUri: nativeSol.logoURI ?? null,
+    };
+    const withoutWsol = splTokens.filter((t) => t.mint !== SOL_WRAPPED_MINT);
+    return [solRow, ...withoutWsol];
+  }, [splTokens, state]);
 
   const [tokenChoice, setTokenChoice] = useState<string>("");
   const [mode, setMode] = useState<"shield" | "unshield">("shield");
@@ -258,7 +267,7 @@ export function Shield() {
         };
       }
     }
-    return { symbol: "—", name: "", logoUri: null as string | null };
+    return { symbol: "-", name: "", logoUri: null as string | null };
   }, [selectedRow, mintEffective, state]);
 
   const dec =
@@ -271,8 +280,6 @@ export function Shield() {
         : undefined) ??
     9;
 
-    // 
-  // Shield spend cap: max(Payments base balance, portfolio row). The API can
   // return 0 while the wallet snapshot still has the correct ATA amount.
 
   const capRaw = useMemo(() => {
@@ -433,15 +440,15 @@ export function Shield() {
         <h1 className="text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>Shield</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Private balance (shield / unshield) is only supported on Solana Devnet
-          for now. Switch network in Settings to use it.
+          for now. Brume is locked to Devnet during beta.
         </p>
         <Button
           type="button"
           variant="secondary"
           className="mt-6 w-full max-w-xs rounded-2xl"
-          onClick={() => navigate("/settings")}
+          onClick={() => navigate("/")}
         >
-          Open Settings
+          Back to Home
         </Button>
       </motion.div>
     );
@@ -517,7 +524,7 @@ export function Shield() {
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4 pt-6">
         <div className="flex flex-col gap-2" style={{ position: "relative", isolation: "isolate" }}>
-          {/* From card */}
+          {}
           <div className="rounded-2xl bg-card px-3 py-2.5" style={{ position: "relative", zIndex: 2 }}>
             <div className="flex items-center justify-between whitespace-nowrap">
               <span className="text-[16px] leading-5 text-muted-foreground">
@@ -574,7 +581,7 @@ export function Shield() {
                     ? "Updating…"
                     : balanceErr && mode === "unshield"
                       ? balanceErr
-                      : rateLine ?? (balanceErr ? balanceErr : "—")}
+                      : rateLine ?? (balanceErr ? balanceErr : "-")}
                 </span>
               </div>
               <span className="text-[14px] leading-5 text-muted-foreground">
@@ -582,7 +589,7 @@ export function Shield() {
               </span>
             </div>
 
-            {/* Swap circle — toggles shield/unshield */}
+            {}
             <button
               type="button"
               onClick={flipMode}
@@ -594,7 +601,7 @@ export function Shield() {
             </button>
           </div>
 
-          {/* To card */}
+          {}
           <div className="rounded-2xl border border-border bg-background px-3 py-3" style={{ zIndex: 1 }}>
             <div className="flex items-center">
               <span className="text-[16px] leading-5 text-muted-foreground">
@@ -623,7 +630,7 @@ export function Shield() {
               <span className="text-[14px] leading-5 text-muted-foreground">
                 Balance:{" "}
                 {mode === "unshield" && !balanceInfo
-                  ? "—"
+                  ? "-"
                   : destHuman.toLocaleString(undefined, {
                       maximumFractionDigits: Math.min(8, dec),
                     })}
@@ -764,7 +771,7 @@ export function Shield() {
                           </div>
                         </>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </div>
                   </button>

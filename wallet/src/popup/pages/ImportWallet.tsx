@@ -131,7 +131,7 @@ export function ImportWallet() {
     setErr(null);
     const trimmed = words.join(" ");
     if (!validateMnemonicPhrase(trimmed)) {
-      setErr("Invalid recovery phrase — check each word.");
+      setErr("Invalid recovery phrase - check each word.");
       return;
     }
     if (addAccountFlow) {

@@ -4,12 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Brume design system — Navy + Bright Ube + Cal Sans / Onest */
 @theme {
   --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Cal Sans", ui-sans-serif, system-ui, sans-serif;
 
-  /* Navy palette */
+  
   --color-navy-50: #f2f1f8;
   --color-navy-100: #e5e2f0;
   --color-navy-200: #c7c1e0;
@@ -22,7 +21,7 @@
   --color-navy-900: #191243;
   --color-navy-950: #0d0925;
 
-  /* Bright Ube palette */
+  
   --color-ube-50: #f7f5ff;
   --color-ube-100: #efebfe;
   --color-ube-200: #e0dafe;
@@ -44,7 +43,6 @@ body,
   overflow-x: hidden;
 }
 
-/* Chrome side panel */
 html.brume-shell-side {
   height: 100%;
   min-height: 100dvh;
@@ -70,7 +68,6 @@ html.brume-shell-side #root {
   overflow: hidden;
 }
 
-/* Toolbar popup */
 html.brume-shell-popup,
 html.brume-shell-popup body,
 html.brume-shell-popup #root {
@@ -87,10 +84,6 @@ body.brume-popup {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ------------------------------------------------------------------ */
-/* Motion — spring easing from Brume/Loyal design system              */
-/* ------------------------------------------------------------------ */
-
 @keyframes brume-fade-in {
   from {
     opacity: 0;
@@ -106,7 +99,6 @@ body.brume-popup {
   animation: brume-fade-in 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
-/* Stagger helpers for sibling elements */
 .brume-animate-in:nth-child(2) { animation-delay: 0.06s; }
 .brume-animate-in:nth-child(3) { animation-delay: 0.12s; }
 .brume-animate-in:nth-child(4) { animation-delay: 0.18s; }
@@ -176,7 +168,6 @@ body.brume-popup {
   transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Press-scale interaction (loyal-app pattern) */
 .brume-press {
   transition: transform 0.18s cubic-bezier(0.32, 0.72, 0, 1),
     box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1);
@@ -185,7 +176,6 @@ body.brume-popup {
   transform: scale(0.97);
 }
 
-/* Glass card (matches web app .glass) */
 .brume-glass {
   background-color: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px) saturate(150%);
@@ -250,9 +240,6 @@ body.brume-popup {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ------------------------------------------------------------------ */
-/* Light: white bg, navy primary, ube accents                         */
-/* ------------------------------------------------------------------ */
 :root {
   --background: #ffffff;
   --foreground: #191243;
@@ -291,9 +278,6 @@ body.brume-popup {
   --btn-disabled: #c7c1e0;
 }
 
-/* ------------------------------------------------------------------ */
-/* Dark: navy-950 bg, ube-400 primary, glass surfaces                 */
-/* ------------------------------------------------------------------ */
 .dark {
   --background: #0d0925;
   --foreground: #f7f5ff;
@@ -351,7 +335,7 @@ body.brume-popup {
     background-color: rgba(175, 162, 252, 0.28);
     color: #f7f5ff;
   }
-  /* Firefox: strip native control chrome */
+  
   button,
   input,
   textarea {

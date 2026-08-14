@@ -50,8 +50,6 @@ import {
   type UnsignedPaymentTransaction,
 } from "./payments-api";
 
-// MagicBlock Payments API returns legacy transactions; PER submits need TEE auth + Bearer token.
-
 function formatTeeIntegrityFailure(e: unknown): string {
   if (e instanceof Error) {
     const m = e.message;
@@ -80,7 +78,6 @@ function amountToApiNumber(raw: bigint): number {
   return Number(raw);
 }
 
-// PER HTTP RPC with session token (/auth/challenge, /auth/login) + submit URL (may differ on devnet).
 async function ephemeralAuthedConnection(
   network: NetworkId,
   signer: Keypair,
@@ -112,13 +109,11 @@ async function ephemeralAuthedConnection(
   });
 }
 
-// Sign wallet-owned keys on API-built legacy tx; send to base or ephemeral per unsigned.sendTo.
 async function signAndSendLegacyPaymentTransaction(params: {
   network: NetworkId;
   rpcUrlOverride?: string | null;
   signer: Keypair;
   unsigned: UnsignedPaymentTransaction;
-  // When the Payments API omits sendTo (some PER private paths).
   defaultSendToWhenMissing?: "base" | "ephemeral";
 }): Promise<string> {
   const wire = base64ToBytes(params.unsigned.transactionBase64);
@@ -131,8 +126,6 @@ async function signAndSendLegacyPaymentTransaction(params: {
     params.defaultSendToWhenMissing ??
     "base";
 
-  // Devnet shield / PER flows move as fast as the rollup; waiting for "confirmed" delays
-  // success and lets a stale Brume indexer win over fresh RPC reads. Use processed there.
   const confirmCommitment =
     params.network === "devnet" ? "processed" : "confirmed";
 
@@ -141,7 +134,6 @@ async function signAndSendLegacyPaymentTransaction(params: {
   try {
     if (sendTo === "ephemeral") {
       rpcForLogs = await ephemeralAuthedConnection(params.network, params.signer);
-      // ER / PER: preflight simulation often fails even when the tx is valid on the rollup.
       const sig = await rpcForLogs.sendRawTransaction(raw, {
         skipPreflight: true,
         maxRetries: 3,
@@ -226,7 +218,6 @@ async function sendRawTransactionWithDetailedLogs(
   }
 }
 
-// Posts initialize-mint once if is-mint-initialized is false (required before deposit/transfer).
 async function ensurePaymentsMintInitializedForSpl(p: {
   mintAddress: string;
   network: NetworkId;
@@ -348,7 +339,6 @@ export async function sendSol(params: {
   );
 }
 
-// Private wSOL on PER when possible; devnet surfaces errors; mainnet falls back to native SOL transfer.
 export async function sendSolPreferMagicBlockPrivate(params: {
   network: NetworkId;
   from: Keypair;
@@ -458,7 +448,6 @@ export async function readMintForTransfer(
   return { decimals: dec, tokenProgram };
 }
 
-// Private SPL on PER when possible; devnet surfaces errors; mainnet falls back to on-chain SPL transfer.
 export async function sendSplPreferMagicBlockPrivate(params: {
   network: NetworkId;
   from: Keypair;
@@ -519,7 +508,6 @@ export async function sendSplPreferMagicBlockPrivate(params: {
   }
 }
 
-// Shielded (ephemeral) balance → recipient ephemeral; fails if private balance too low.
 export async function sendSplPrivateEphemeral(params: {
   network: NetworkId;
   from: Keypair;
@@ -670,7 +658,6 @@ export type BurnSplTokenResult = {
   signature: string;
   mintAddress: string;
   burnAll: boolean;
-  // Remaining smallest units, or null when burn-all closed the ATA.
   remainingAmountRaw: string | null;
 };
 
@@ -754,7 +741,6 @@ export async function burnSplToken(params: {
   };
 }
 
-// Wrap native SOL into wSOL: creates the wSOL ATA if needed, transfers SOL in,
 // then syncs the ATA balance. `amountSol` is a human decimal string (e.g. "1.5").
 export async function wrapSol(params: {
   network: NetworkId;
@@ -792,7 +778,6 @@ export async function wrapSol(params: {
   return { signature: sig };
 }
 
-// Unwrap wSOL by closing the wSOL ATA. The Solana runtime converts the token
 // balance + rent back to native SOL automatically on close.
 export async function unwrapSol(params: {
   network: NetworkId;
@@ -824,8 +809,6 @@ export async function unwrapSol(params: {
   return { signature: sig };
 }
 
-// Smallest-unit SPL balance for `owner` ATA at `mint`, read at the given commitment (default processed).
-
 export async function fetchSplAtaBalanceRawForOwner(
   params: {
     network: NetworkId;
@@ -847,7 +830,6 @@ export async function fetchSplAtaBalanceRawForOwner(
   return bal.value.amount;
 }
 
-// Base-layer ATA balance + PER private balance from Payments API (queries, not on-chain reads for private leg).
 export async function fetchShieldBalanceInfo(params: {
   network: NetworkId;
   rpcUrlOverride?: string | null;
@@ -864,22 +846,26 @@ export async function fetchShieldBalanceInfo(params: {
   const owner = params.ownerAddress.trim();
 
   const [baseBalanceRaw, privateBalanceRaw] = await Promise.all([
-    params.network === "devnet"
-      ? fetchSplAtaBalanceRawForOwner(
-          {
-            network: params.network,
-            ownerB58: owner,
-            mintAddress: params.mintAddress,
-            rpcUrlOverride: params.rpcUrlOverride,
-          },
-          "processed",
-        ).catch(() => "0")
-      : paymentsGetSplBalance(
-          owner,
-          params.mintAddress,
-          params.network,
-          params.rpcUrlOverride,
-        ).catch(() => "0"),
+    params.mintAddress === SOL_WRAPPED_MINT
+      ? fetchSolBalanceBaseUnits(params.network, owner, params.rpcUrlOverride)
+          .then((n) => n.toString())
+          .catch(() => "0")
+      : params.network === "devnet"
+        ? fetchSplAtaBalanceRawForOwner(
+            {
+              network: params.network,
+              ownerB58: owner,
+              mintAddress: params.mintAddress,
+              rpcUrlOverride: params.rpcUrlOverride,
+            },
+            "processed",
+          ).catch(() => "0")
+        : paymentsGetSplBalance(
+            owner,
+            params.mintAddress,
+            params.network,
+            params.rpcUrlOverride,
+          ).catch(() => "0"),
     paymentsGetPrivateBalance(
       owner,
       params.mintAddress,
@@ -902,6 +888,10 @@ export async function shieldSplToken(params: {
   amountStr: string;
   rpcUrlOverride?: string | null;
 }): Promise<{ signature: string }> {
+  if (params.mintAddress === SOL_WRAPPED_MINT) {
+    await wrapSol({ network: params.network, from: params.from, amountSol: params.amountStr, rpcUrlOverride: params.rpcUrlOverride });
+  }
+
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const mintPk = new PublicKey(params.mintAddress);
   const { decimals } = await readMintForTransfer(conn, mintPk);
@@ -966,6 +956,15 @@ export async function unshieldSplToken(params: {
     signer: params.from,
     unsigned: withdrawUnsigned,
   });
+
+  if (params.mintAddress === SOL_WRAPPED_MINT) {
+    try {
+      await unwrapSol({ network: params.network, from: params.from, rpcUrlOverride: params.rpcUrlOverride });
+    } catch (e) {
+      console.warn("[Brume] auto-unwrap wSOL after unshield failed (non-fatal):", e);
+    }
+  }
+
   return { signature: sig };
 }
 
@@ -1003,7 +1002,6 @@ export async function signAllTransactionBytes(
   return out;
 }
 
-// Detached Ed25519 over raw bytes (dApp signMessage).
 export function signMessageBytes(message: Uint8Array, signer: Keypair): Uint8Array {
   return nacl.sign.detached(message, signer.secretKey);
 }
@@ -1037,7 +1035,6 @@ const MPL_CORE_PROGRAM_ID = new PublicKey(
   "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d",
 );
 
-// Burns an MPL Core NFT asset using the BurnV1 instruction (discriminator=12).
 export async function burnMplCoreNft(params: {
   network: NetworkId;
   from: Keypair;
@@ -1050,7 +1047,6 @@ export async function burnMplCoreNft(params: {
   const owner = params.from.publicKey;
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
 
-  // BurnV1 data: u8 discriminator (12) + option<CompressionProof> = None (0x00)
   const data = Buffer.from([12, 0]);
 
   const keys: AccountMeta[] = [

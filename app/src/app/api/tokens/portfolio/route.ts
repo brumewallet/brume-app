@@ -10,7 +10,6 @@ const RPC: Record<string, string> = {
 
 type TokenMeta = { symbol: string; name: string; logoURI?: string; decimals: number };
 
-// Build map from the bundled local token list (always available, no network needed)
 function buildLocalMap(): Map<string, TokenMeta> {
   try {
     const listPath = path.join(
@@ -34,7 +33,6 @@ function buildLocalMap(): Map<string, TokenMeta> {
 
 const LOCAL_MAP = buildLocalMap();
 
-// Jupiter overlay — fetched once per server process, falls back to LOCAL_MAP
 let jupCache: Map<string, TokenMeta> | null = null;
 let jupCacheExpiry = 0;
 
@@ -57,7 +55,6 @@ async function getTokenMap(): Promise<Map<string, TokenMeta>> {
       return jupCache;
     }
   } catch {
-    // Jupiter unreachable — fall through to local map
   }
   return LOCAL_MAP;
 }

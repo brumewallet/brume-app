@@ -22,6 +22,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { getNativeSolDisplay } from "@/lib/token-metadata";
 import { formatTokenListAmount } from "@/lib/utils";
 import { NETWORKS, SOL_WRAPPED_MINT, explorerMintUrl } from "@/shared/constants";
+import { NetworkBanner } from "../components/NetworkBanner";
 import { PageHeader } from "../components/PageHeader";
 import { BrumeIcon } from "../components/BrumeIcon";
 import { NATIVE_SOL_TOKEN_SEGMENT } from "../lib/native-sol-route";
@@ -42,7 +43,6 @@ function ellipsifyMint(mint: string, head = 4, tail = 4): string {
 function InfoRow(props: {
   label: string;
   children: ReactNode;
-    // When false, omit bottom border (e.g. last row before actions).
 
   border?: boolean;
 }) {
@@ -100,7 +100,6 @@ export function TokenDetail() {
 
   const isWSOL = !isNativeSolDetail && mint === SOL_WRAPPED_MINT;
 
-  // wSOL row found in portfolio — used on the native SOL detail page to surface unwrap
   const wsolRow = useMemo(
     () => state?.portfolioTokens?.find((t) => t.mint === SOL_WRAPPED_MINT) ?? null,
     [state?.portfolioTokens],
@@ -121,8 +120,6 @@ export function TokenDetail() {
     ? (solDisplay?.decimals ?? 9)
     : (row?.decimals ?? 9);
   const decimalsDisplay = String(decimals);
-
-    // Mint shown on-chain for native SOL (wrapped SOL mint).
 
   const mintAddress = isNativeSolDetail ? SOL_WRAPPED_MINT : mint;
   const mintShort = ellipsifyMint(mintAddress);
@@ -269,6 +266,7 @@ export function TokenDetail() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 22 }}
     >
+      <NetworkBanner network={state.network} />
       <PageHeader title={symbol} backTo={backTo} />
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-3">
         <h2 className="mb-2 text-[15px] font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Info</h2>
@@ -298,7 +296,7 @@ export function TokenDetail() {
           </div>
 
           <InfoRow label="Symbol">{symbol}</InfoRow>
-          <InfoRow label="Network">{net?.label ?? "—"}</InfoRow>
+          <InfoRow label="Network">{net?.label ?? "-"}</InfoRow>
           <InfoRow label="Balance">
             <span className="tabular-nums">
               {formatTokenListAmount(humanBal)} {symbol}

@@ -21,6 +21,7 @@ import { TokenDetail } from "./pages/TokenDetail";
 import { SendSuccess } from "./pages/SendSuccess";
 import { NFTs } from "./pages/NFTs";
 import { Settings } from "./pages/Settings";
+import { Shield } from "./pages/Shield";
 import { Unlock } from "./pages/Unlock";
 import { Welcome } from "./pages/Welcome";
 import { AnimatedOutlet } from "./components/AnimatedOutlet";
@@ -134,6 +135,7 @@ export function App() {
           <Route path="/" element={<MainShell />}>
             <Route index element={<Dashboard />} />
             <Route path="token/:mint" element={<TokenDetail />} />
+            <Route path="shield" element={<Shield />} />
             <Route path="nfts" element={<NFTs />} />
             <Route path="activity" element={<Activity />} />
             <Route path="settings" element={<Settings />} />

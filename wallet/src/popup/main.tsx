@@ -13,7 +13,6 @@ import { applyUiSurfaceClass, readUiSurface } from "./lib/ui-shell";
 
 void readUiSurface().then(applyUiSurfaceClass);
 
-// Theme: "system" | "light" | "dark" — persisted in localStorage
 const THEME_KEY = "brume:theme";
 const mq = window.matchMedia("(prefers-color-scheme: dark)");
 function applyTheme() {

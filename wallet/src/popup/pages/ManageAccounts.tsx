@@ -61,7 +61,7 @@ export function ManageAccounts() {
 
       <p className="text-xs text-muted-foreground">
         Each account has its own address. Tap an account to use it and return
-        home — no extra password while your wallet is unlocked.
+        home - no extra password while your wallet is unlocked.
       </p>
 
       {switchErr ? (

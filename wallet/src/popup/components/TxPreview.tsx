@@ -32,7 +32,7 @@ export function TxPreview({ serializedBase64 }: { serializedBase64: string }) {
 
   if (tx instanceof VersionedTransaction) {
     const keys = tx.message.staticAccountKeys.map((k) => k.toBase58());
-    const feePayer = keys[0] ?? "—";
+    const feePayer = keys[0] ?? "-";
     return (
       <div className="space-y-2 text-xs text-foreground">
         <p>
@@ -46,7 +46,7 @@ export function TxPreview({ serializedBase64 }: { serializedBase64: string }) {
           {tx.message.compiledInstructions.length}
         </p>
         <p className="text-muted-foreground">
-          Full simulation is not wired in v1 — approve only if you trust this
+          Full simulation is not wired in v1 - approve only if you trust this
           site.
         </p>
       </div>
@@ -76,7 +76,7 @@ export function TxPreview({ serializedBase64 }: { serializedBase64: string }) {
     <div className="space-y-3 text-xs text-foreground">
       {transfers.length === 0 ? (
         <p className="text-muted-foreground">
-          Non-system or complex transaction — preview limited.
+          Non-system or complex transaction - preview limited.
         </p>
       ) : (
         transfers.map((t, i) => (
@@ -91,7 +91,7 @@ export function TxPreview({ serializedBase64 }: { serializedBase64: string }) {
         ))
       )}
       <p className="text-[11px] text-muted-foreground/80">
-        Fee payer: {tx.feePayer?.toBase58() ?? "—"}
+        Fee payer: {tx.feePayer?.toBase58() ?? "-"}
       </p>
     </div>
   );

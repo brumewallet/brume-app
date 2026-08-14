@@ -9,8 +9,6 @@ import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "../lib/useCopyToClipboard";
 import { ArrowLeftIcon, CopyIcon } from "@/components/Icons";
 
-// In-page step change only (shell already slides R→L via MainShell `accountSubpage`).
-
 const stepCrossfade = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const };
 
 export function PrivateKey() {

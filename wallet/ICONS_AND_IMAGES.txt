@@ -1,4 +1,4 @@
-Brume Wallet extension — icons & images inventory
+Brume Wallet extension - icons & images inventory
 ==================================================
 Scope: wallet/src (popup UI, components, shadcn ui). Generated for design/asset handoff.
 
@@ -8,57 +8,57 @@ Scope: wallet/src (popup UI, components, shadcn ui). Generated for design/asset 
 Package: @hugeicons/core-free-icons
 Wrapper: wallet/src/popup/components/BrumeIcon.tsx → @hugeicons/react HugeiconsIcon
 
-  AccountRecoveryIcon     — AddAccount.tsx
-  Add01Icon               — ManageAccounts.tsx
-  ArrowDataTransferVerticalIcon — Shield.tsx
-  ArrowDown01Icon         — AddAccount.tsx, Shield.tsx (token pill)
-  ArrowDown01Icon         — AddAccount.tsx
-  ArrowLeft01Icon         — PageHeader.tsx
-  ArrowLeft02Icon         — AddAccount.tsx, AddHdAccount.tsx, EditAccount.tsx, ManageAccounts.tsx, PrivateKey.tsx
-  Blockchain05Icon        — SendSol.tsx, SendSpl.tsx, TokenDetail.tsx
-  CircleLock01Icon        — Unlock.tsx
-  Clock01Icon             — ActionBar.tsx, BottomNav.tsx
-  Copy01Icon              — MainShellHeader.tsx, PrivateKey.tsx, TokenDetail.tsx
-  DocumentCodeIcon        — AddAccount.tsx
-  Home01Icon              — BottomNav.tsx
-  Layout01Icon            — SurfaceToggle.tsx
-  LinkCircleIcon          — ApproveConnect.tsx
-  MoneyReceive01Icon      — ActionBar.tsx, BottomNav.tsx
-  Refresh01Icon           — Dashboard.tsx
-  Search01Icon            — Send.tsx, Shield.tsx (token drawer)
-  SecurityCheckIcon       — ApproveSign.tsx
-  SentIcon                — ActionBar.tsx, BottomNav.tsx, TokenDetail.tsx
-  Settings01Icon          — BottomNav.tsx
-  Shield01Icon            — ActionBar.tsx, BottomNav.tsx, Shield.tsx
-  Tick02Icon              — SendSuccess.tsx, VerifiedBadge.tsx
+  AccountRecoveryIcon     - AddAccount.tsx
+  Add01Icon               - ManageAccounts.tsx
+  ArrowDataTransferVerticalIcon - Shield.tsx
+  ArrowDown01Icon         - AddAccount.tsx, Shield.tsx (token pill)
+  ArrowDown01Icon         - AddAccount.tsx
+  ArrowLeft01Icon         - PageHeader.tsx
+  ArrowLeft02Icon         - AddAccount.tsx, AddHdAccount.tsx, EditAccount.tsx, ManageAccounts.tsx, PrivateKey.tsx
+  Blockchain05Icon        - SendSol.tsx, SendSpl.tsx, TokenDetail.tsx
+  CircleLock01Icon        - Unlock.tsx
+  Clock01Icon             - ActionBar.tsx, BottomNav.tsx
+  Copy01Icon              - MainShellHeader.tsx, PrivateKey.tsx, TokenDetail.tsx
+  DocumentCodeIcon        - AddAccount.tsx
+  Home01Icon              - BottomNav.tsx
+  Layout01Icon            - SurfaceToggle.tsx
+  LinkCircleIcon          - ApproveConnect.tsx
+  MoneyReceive01Icon      - ActionBar.tsx, BottomNav.tsx
+  Refresh01Icon           - Dashboard.tsx
+  Search01Icon            - Send.tsx, Shield.tsx (token drawer)
+  SecurityCheckIcon       - ApproveSign.tsx
+  SentIcon                - ActionBar.tsx, BottomNav.tsx, TokenDetail.tsx
+  Settings01Icon          - BottomNav.tsx
+  Shield01Icon            - ActionBar.tsx, BottomNav.tsx, Shield.tsx
+  Tick02Icon              - SendSuccess.tsx, VerifiedBadge.tsx
 
 -------------------------------------------------------------------------------
 2) @hugeicons/react (direct, not via BrumeIcon)
 -------------------------------------------------------------------------------
-  Loading03Icon           — wallet/src/components/ui/spinner.tsx
+  Loading03Icon           - wallet/src/components/ui/spinner.tsx
 
 -------------------------------------------------------------------------------
 3) Bundled static image files (imported in source)
 -------------------------------------------------------------------------------
-  @/assets/side-panel.png — SurfaceToggle.tsx (path: wallet/src/assets/side-panel.png if present)
+  @/assets/side-panel.png - SurfaceToggle.tsx (path: wallet/src/assets/side-panel.png if present)
 
   Note: manifest.json does not declare extension action icons; add paths here if you add icon PNGs later.
 
 -------------------------------------------------------------------------------
 4) Remote / runtime images (URLs, not repo files)
 -------------------------------------------------------------------------------
-  • Token row / send / token detail / shield: <img src={logoUri} /> — Brume API portfolio `logoUri`, or token-list `logoURI` for native SOL (getNativeSolDisplay).
-  • Activity list: <img src={ic.logoUri} /> — resolved activity enrichment from API/RPC.
+  • Token row / send / token detail / shield: <img src={logoUri} /> - Brume API portfolio `logoUri`, or token-list `logoURI` for native SOL (getNativeSolDisplay).
+  • Activity list: <img src={ic.logoUri} /> - resolved activity enrichment from API/RPC.
   • Jupiter / price context: may reference token metadata URLs indirectly via mint list (see JupiterPortfolioPrices.tsx).
-  • token-list package: wallet/token-list/src/tokens/solana.tokenlist.json — many external logoURI strings (GitHub raw, jsDelivr, etc.).
-  • token-list/assets/mainnet/<mint>/logo.svg|png — vendored logos under wallet/token-list/assets/ (not imported by TS; used by token-list tooling).
+  • token-list package: wallet/token-list/src/tokens/solana.tokenlist.json - many external logoURI strings (GitHub raw, jsDelivr, etc.).
+  • token-list/assets/mainnet/<mint>/logo.svg|png - vendored logos under wallet/token-list/assets/ (not imported by TS; used by token-list tooling).
 
 -------------------------------------------------------------------------------
 5) Non-file visuals
 -------------------------------------------------------------------------------
-  • react-qr-code — Receive.tsx (QR matrix, no raster asset).
-  • TokenRow fallback avatar — CSS conic-gradient + letter (TokenRow.tsx).
-  • Activity placeholder — "◎" for SOL when no logo (Activity.tsx).
+  • react-qr-code - Receive.tsx (QR matrix, no raster asset).
+  • TokenRow fallback avatar - CSS conic-gradient + letter (TokenRow.tsx).
+  • Activity placeholder - "◎" for SOL when no logo (Activity.tsx).
 
 -------------------------------------------------------------------------------
 6) shadcn/ui components in wallet/src/components/ui

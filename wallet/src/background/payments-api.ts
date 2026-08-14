@@ -1,4 +1,3 @@
-// HTTPS client for https://payments.magicblock.app (SPL private payments).
 // cluster = devnet | mainnet, or a custom base-layer RPC URL string.
 import {
   normalizeInitializeMintUnsigned,
@@ -51,7 +50,6 @@ function clusterForRequest(
   return paymentsClusterForNetwork(network);
 }
 
-// Parses JSON; on failure throws with API error.message / validation issues when present.
 async function readJson(res: Response): Promise<unknown> {
   const text = await res.text();
   let data: unknown = {};

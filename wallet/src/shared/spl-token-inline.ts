@@ -21,8 +21,6 @@ export function tokenProgramPubkey(kind: TokenProgramKind): PublicKey {
   return kind === "token-2022" ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
 }
 
-// SPL Associated Token Account PDA for (owner, token program, mint).
-
 export function getAssociatedTokenAddressSync(
   mint: PublicKey,
   owner: PublicKey,
@@ -34,8 +32,6 @@ export function getAssociatedTokenAddressSync(
   );
   return addr;
 }
-
-// Associated Token Account program — idempotent create (instruction index 1).
 
 export function createAssociatedTokenAccountIdempotentInstruction(
   payer: PublicKey,
@@ -57,8 +53,6 @@ export function createAssociatedTokenAccountIdempotentInstruction(
     ],
   });
 }
-
-// SPL Token `BurnChecked` (instruction 15).
 
 export function createBurnCheckedInstruction(
   account: PublicKey,
@@ -83,8 +77,6 @@ export function createBurnCheckedInstruction(
   });
 }
 
-// SPL Token `CloseAccount` (instruction 9) — ATA must have zero balance.
-
 export function createCloseAccountInstruction(
   account: PublicKey,
   destination: PublicKey,
@@ -102,9 +94,6 @@ export function createCloseAccountInstruction(
   });
 }
 
-// SPL Token `TransferChecked` (instruction 12).
-
-// SyncNative (ix 17): syncs the lamport balance of a wSOL ATA into its token amount.
 export function createSyncNativeInstruction(account: PublicKey): TransactionInstruction {
   return new TransactionInstruction({
     programId: TOKEN_PROGRAM_ID,

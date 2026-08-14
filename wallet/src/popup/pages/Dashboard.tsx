@@ -36,7 +36,6 @@ export function Dashboard() {
     [state?.network],
   );
 
-  // Show wSOL in the token list with its own row (separate from native SOL)
   const sortedSpl = useMemo(
     () => sortPortfolioTokensByBalanceDesc(state?.portfolioTokens ?? []),
     [state?.portfolioTokens],

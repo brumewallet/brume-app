@@ -2,12 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NetworkBadge } from "./NetworkBadge";
+import { NetworkBanner } from "./NetworkBanner";
 import { truncateMiddle } from "../lib/format";
 import { useWalletStore } from "../store";
 import { CopyIcon } from "@/components/Icons";
 
-// Brume brand icon — white pillar on transparent, placed on a dark rounded square.
 function BrumeIcon({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -48,58 +47,55 @@ export function MainShellHeader() {
   }
 
   return (
-    <header
-      className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-background/90 px-4 pb-3 pt-[max(0.5rem,env(safe-area-inset-top,0px))] backdrop-blur-md"
-      aria-label="Wallet"
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        {/* Rounded-square brand icon */}
-        <button
-          type="button"
-          onClick={() => navigate("/accounts")}
-          aria-label="Manage accounts"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#130F30] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <BrumeIcon size={22} />
-        </button>
-
-        {/* Name (top) + address (bottom) */}
-        <div className="min-w-0 flex-1">
+    <div className="shrink-0">
+      <header
+        className="flex items-center justify-between gap-2 bg-background/90 px-4 pb-3 pt-[max(0.5rem,env(safe-area-inset-top,0px))] backdrop-blur-md"
+        aria-label="Wallet"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <button
             type="button"
             onClick={() => navigate("/accounts")}
-            className="block truncate text-left text-[15px] font-semibold text-foreground outline-none hover:opacity-80"
-            style={{ fontFamily: "var(--font-display)" }}
+            aria-label="Manage accounts"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#130F30] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {displayName}
+            <BrumeIcon size={22} />
           </button>
-          {pk && (
-            <div className="flex items-center gap-1 -mt-0.5">
-              <span className="truncate text-[12px] text-muted-foreground">
-                {truncateMiddle(pk, 4, 4)}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                className="shrink-0 text-muted-foreground/50 -ml-0.5"
-                onClick={() => void copyAddr()}
-                aria-label="Copy address"
-              >
-                {copied ? (
-                  <Check className="h-[12px] w-[12px] text-[#34C759]" strokeWidth={2.5} />
-                ) : (
-                  <CopyIcon className="size-[11px]" />
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <NetworkBadge network={state.network} />
-      </div>
-    </header>
+          <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => navigate("/accounts")}
+              className="block truncate text-left text-[15px] font-semibold text-foreground outline-none hover:opacity-80"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {displayName}
+            </button>
+            {pk ? (
+              <div className="-mt-0.5 flex items-center gap-1">
+                <span className="truncate text-[12px] text-muted-foreground">
+                  {truncateMiddle(pk, 4, 4)}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="-ml-0.5 shrink-0 text-muted-foreground/50"
+                  onClick={() => void copyAddr()}
+                  aria-label="Copy address"
+                >
+                  {copied ? (
+                    <Check className="h-[12px] w-[12px] text-[#34C759]" strokeWidth={2.5} />
+                  ) : (
+                    <CopyIcon className="size-[11px]" />
+                  )}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </header>
+      <NetworkBanner network={state.network} />
+    </div>
   );
 }

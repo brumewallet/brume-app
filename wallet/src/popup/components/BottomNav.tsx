@@ -7,10 +7,10 @@ import {
   HomeSolidIcon,
   NavSendIcon,
   NavSendSolidIcon,
-  NFTOutlineIcon,
-  NFTSolidIcon,
   SettingIcon,
   SettingSolidIcon,
+  ShieldIcon,
+  ShieldSolidIcon,
 } from "@/components/Icons";
 
 const linkBase =
@@ -38,11 +38,11 @@ export function BottomNav() {
           </span>
         )}
       </NavLink>
-      <NavLink to="/nfts" className={linkBase}>
+      <NavLink to="/shield" className={linkBase}>
         {({ isActive }) => (
           <span className="flex flex-col items-center gap-0.5">
-            {isActive ? <NFTSolidIcon className="text-primary" /> : <NFTOutlineIcon className="text-muted-foreground" />}
-            <span className={cn(isActive ? "font-semibold text-primary" : "font-medium text-muted-foreground")}>NFTs</span>
+            {isActive ? <ShieldSolidIcon className="text-primary" /> : <ShieldIcon className="text-muted-foreground" />}
+            <span className={cn(isActive ? "font-semibold text-primary" : "font-medium text-muted-foreground")}>Shield</span>
           </span>
         )}
       </NavLink>

@@ -44,8 +44,6 @@ export function pathsForAccounts(count: number): string[] {
   return Array.from({ length: count }, (_, i) => `m/44'/501'/${i}'/0'`);
 }
 
-// 
-// Parse pasted secret key material: Base58 (Phantom / Solflare export), base64
 // (Brume export), hex (64 or 128 chars), JSON byte array `[0,1,…]` (32 or 64),
 // or space/comma-separated decimals. Optional JSON object with a string field
 // like `privateKey` / `secretKey`.

@@ -8,7 +8,7 @@ export function PasswordInput(props: {
   autoFocus?: boolean;
   id?: string;
   name?: string;
-  /** Merged onto the underlying input (e.g. `text-center` for unlock). */
+  
   className?: string;
 }) {
   return (

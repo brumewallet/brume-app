@@ -546,7 +546,6 @@ export function SearchIcon({ className, ...props }: IconSvgProps) {
   );
 }
 
-/** Setting (gear) outline — from `public/Icon/setting-2/vuesax/linear/setting-2.svg`. */
 export function SettingIcon({ className, ...props }: IconSvgProps) {
   return (
     <svg
@@ -578,7 +577,6 @@ export function SettingIcon({ className, ...props }: IconSvgProps) {
   );
 }
 
-/** Setting (gear) solid — from `public/Icon 2/setting-2/vuesax/bold/setting-2.svg`. */
 export function SettingSolidIcon({ className, ...props }: IconSvgProps) {
   return (
     <svg

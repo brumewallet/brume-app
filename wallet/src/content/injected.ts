@@ -171,6 +171,5 @@ window.brume = brume;
 try {
   window.solana = brume;
 } catch {
-    // Some hosts (e.g. Supabase dashboard) define read-only window.solana.
 
 }

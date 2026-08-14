@@ -268,7 +268,6 @@ export function NFTs() {
 
   const collections = useMemo(() => (nfts ? groupByCollection(nfts) : []), [nfts]);
 
-  // Keep collection view in sync if items change (e.g. after burn)
   const currentCollection = useMemo(() => {
     if (view.type !== "collection") return null;
     return collections.find((c) => c.id === view.col.id) ?? null;
@@ -284,7 +283,7 @@ export function NFTs() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Header */}
+      {}
       <div className="flex items-center gap-2 border-b border-border px-3 py-3 shrink-0">
         {isInCollection && (
           <button
@@ -319,7 +318,7 @@ export function NFTs() {
         </button>
       </div>
 
-      {/* Body */}
+      {}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         <AnimatePresence mode="wait">
           {loading ? (
