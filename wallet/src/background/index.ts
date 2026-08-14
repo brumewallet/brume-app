@@ -1552,6 +1552,34 @@ async function handleMessage(
         return;
       }
 
+      // Direct pool path (bypasses the MagicBlock-hosted API) — reachable for testing
+      // alongside SHIELD_SPL, not replacing it. Real tx building lands once
+      // brume-pool.ts grows a shield/unshield builder; Day 9 is the cutover.
+      case "SHIELD_POOL":
+      case "UNSHIELD_POOL": {
+        if (!sessionKeypair) {
+          sendResponse({
+            ok: false,
+            error: walletError(WalletErrorCodes.WalletNotReady, "Locked"),
+          });
+          return;
+        }
+        const mint = raw.payload.mint?.trim();
+        const amount = raw.payload.amount?.trim();
+        if (!mint || !amount) {
+          sendResponse({
+            ok: false,
+            error: walletError(4002, "Mint and amount required"),
+          });
+          return;
+        }
+        sendResponse({
+          ok: false,
+          error: walletError(4002, "Direct pool shield/unshield is not implemented yet"),
+        });
+        return;
+      }
+
       case "REQUEST_AIRDROP": {
         if (!sessionKeypair) {
           sendResponse({

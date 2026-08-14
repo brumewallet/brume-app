@@ -10,6 +10,7 @@ import { ApproveConnect } from "./pages/ApproveConnect";
 import { ApproveSign } from "./pages/ApproveSign";
 import { CreateWallet } from "./pages/CreateWallet";
 import { Dashboard } from "./pages/Dashboard";
+import { Disclosure } from "./pages/Disclosure";
 import { ImportPrivateKey } from "./pages/ImportPrivateKey";
 import { ImportOptions } from "./pages/ImportOptions";
 import { ImportWallet } from "./pages/ImportWallet";
@@ -132,6 +133,7 @@ export function App() {
           <Route path="/send/spl/:mint" element={<SendSpl />} />
           <Route path="/send/success" element={<SendSuccess />} />
           <Route path="/receive" element={<Receive />} />
+          <Route path="/disclosure" element={<Disclosure />} />
           <Route path="/" element={<MainShell />}>
             <Route index element={<Dashboard />} />
             <Route path="token/:mint" element={<TokenDetail />} />
