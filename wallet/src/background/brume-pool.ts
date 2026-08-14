@@ -8,7 +8,6 @@ import {
   initializePoolIx,
   LocalTeeSigner,
   POOL_PROGRAM_ID,
-  type Note,
 } from "@brume/sdk";
 import type { NetworkId } from "@/shared/constants";
 
@@ -50,26 +49,19 @@ export function buildInitializePoolTransaction(
   );
 }
 
+// Real preimage fields brume_types::commit/nullifier hash — mirrors crates/brume-types.
 export interface StoredNote {
   commitment: string;
-  amount: string;
+  nullifier: string;
   mint: string;
-  nullifierKey: string;
-  blinding: string;
-  leafIndex: number;
+  amount: string;
+  owner: string;
+  secret: string;
   spent: boolean;
 }
 
 function storageKey(network: NetworkId, ownerAddress: string): string {
   return `brume_notes_${network}_${ownerAddress}`;
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const out = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  }
-  return out;
 }
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -92,20 +84,25 @@ export async function loadStoredNotes(
 export async function saveStoredNote(
   network: NetworkId,
   ownerAddress: string,
-  note: Note,
-  commitment: Uint8Array,
-  leafIndex: number,
+  note: {
+    commitment: Uint8Array;
+    nullifier: Uint8Array;
+    mint: Uint8Array;
+    amount: bigint;
+    owner: Uint8Array;
+    secret: Uint8Array;
+  },
 ): Promise<void> {
   const notes = await loadStoredNotes(network, ownerAddress);
-  const commitmentHex = bytesToHex(commitment);
+  const commitmentHex = bytesToHex(note.commitment);
   if (notes.some((n) => n.commitment === commitmentHex)) return;
   const entry: StoredNote = {
     commitment: commitmentHex,
-    amount: note.amount.toString(),
+    nullifier: bytesToHex(note.nullifier),
     mint: bytesToHex(note.mint),
-    nullifierKey: bytesToHex(note.nullifierKey),
-    blinding: bytesToHex(note.blinding),
-    leafIndex,
+    amount: note.amount.toString(),
+    owner: bytesToHex(note.owner),
+    secret: bytesToHex(note.secret),
     spent: false,
   };
   notes.push(entry);
@@ -123,15 +120,6 @@ export async function markNoteSpent(
     n.commitment === hexCmt ? { ...n, spent: true } : n,
   );
   await chrome.storage.local.set({ [storageKey(network, ownerAddress)]: updated });
-}
-
-export function storedNoteToSdk(sn: StoredNote): Note {
-  return {
-    amount: BigInt(sn.amount),
-    mint: hexToBytes(sn.mint),
-    nullifierKey: hexToBytes(sn.nullifierKey),
-    blinding: hexToBytes(sn.blinding),
-  };
 }
 
 export async function privateBalanceForMint(
