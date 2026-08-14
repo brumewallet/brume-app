@@ -1,19 +1,15 @@
 
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import { Buffer } from "buffer";
 import {
+  deriveCommitment,
   derivePool,
   deriveVault,
-  emptyLeaf,
-  hashPair,
   initializePoolIx,
   LocalTeeSigner,
-  noteCommitment,
   POOL_PROGRAM_ID,
-  TREE_DEPTH,
   type Note,
-  type SpendWitness,
 } from "@brume/sdk";
-import { parseNoteAccount } from "@brume/sdk";
 import type { NetworkId } from "@/shared/constants";
 
 // Dev TEE secret seed (first 32 bytes of keys/brume_dev_tee-keypair.json).
@@ -150,133 +146,12 @@ export async function privateBalanceForMint(
     .reduce((acc, n) => acc + BigInt(n.amount), 0n);
 }
 
-const OFF_NEXT_INDEX = 74;
-const OFF_ROOTS_CURSOR = 82;
-const OFF_FILLED_SUBTREES = 90;
-const OFF_ROOTS = 730;
-const ROOT_HISTORY_SIZE = 32;
-
-export interface PoolState {
-  nextIndex: bigint;
-  rootsCursor: bigint;
-  filledSubtrees: Uint8Array[];
-  roots: Uint8Array[];
-}
-
-export function parsePoolAccount(data: Uint8Array): PoolState {
-  const view = new DataView(data.buffer, data.byteOffset);
-  const nextIndex = view.getBigUint64(OFF_NEXT_INDEX, true);
-  const rootsCursor = view.getBigUint64(OFF_ROOTS_CURSOR, true);
-
-  const filledSubtrees: Uint8Array[] = [];
-  for (let i = 0; i < TREE_DEPTH; i++) {
-    const off = OFF_FILLED_SUBTREES + i * 32;
-    filledSubtrees.push(data.slice(off, off + 32));
-  }
-
-  const roots: Uint8Array[] = [];
-  for (let i = 0; i < ROOT_HISTORY_SIZE; i++) {
-    const off = OFF_ROOTS + i * 32;
-    roots.push(data.slice(off, off + 32));
-  }
-
-  return { nextIndex, rootsCursor, filledSubtrees, roots };
-}
-
-export function currentRoot(state: PoolState): Uint8Array {
-  const cursor = Number(state.rootsCursor) % ROOT_HISTORY_SIZE;
-  return state.roots[cursor]!;
-}
-
-function precomputeEmptyZeros(depth: number): Uint8Array[] {
-  const zeros: Uint8Array[] = [emptyLeaf()];
-  for (let l = 1; l <= depth; l++) {
-    zeros.push(hashPair(zeros[l - 1]!, zeros[l - 1]!));
-  }
-  return zeros;
-}
-
-// indices 0..leaves.length-1; anything beyond that is empty.
-function subtreeHash(
-  nodeIdx: number,
-  level: number,
-  leaves: Uint8Array[],
-  emptyZeros: Uint8Array[],
-): Uint8Array {
-  const startLeaf = nodeIdx * (1 << level);
-  if (startLeaf >= leaves.length) {
-    return emptyZeros[level]!;
-  }
-  if (level === 0) {
-    return leaves[nodeIdx] ?? emptyZeros[0]!;
-  }
-  const left = subtreeHash(nodeIdx * 2, level - 1, leaves, emptyZeros);
-  const right = subtreeHash(nodeIdx * 2 + 1, level - 1, leaves, emptyZeros);
-  return hashPair(left, right);
-}
-
-export function buildMerklePath(
-  targetIdx: number,
-  leaves: Uint8Array[],
-): Uint8Array[] {
-  const emptyZeros = precomputeEmptyZeros(TREE_DEPTH);
-  const path: Uint8Array[] = [];
-  for (let level = 0; level < TREE_DEPTH; level++) {
-    const nodeIdxAtLevel = targetIdx >> level;
-    const siblingIdx = nodeIdxAtLevel ^ 1;
-    path.push(subtreeHash(siblingIdx, level, leaves, emptyZeros));
-  }
-  return path;
-}
-
-export async function fetchPoolMerkleWitness(
+// A note is spendable iff its commitment PDA exists on chain — no tree, no proof.
+export async function isNoteSpendable(
   connection: Connection,
-  poolPubkey: PublicKey,
-  targetNote: Note,
-): Promise<SpendWitness> {
-  const commitment = noteCommitment(targetNote);
-
-  const programAccounts = await connection.getProgramAccounts(POOL_PROGRAM_ID, {
-    filters: [{ dataSize: 1240 }],
-  });
-
-  const announcements: Array<{ commitment: Uint8Array; createdAt: bigint }> = [];
-  for (const { pubkey, account } of programAccounts) {
-    const parsed = parseNoteAccount(pubkey, new Uint8Array(account.data));
-    if (!parsed) continue;
-    if (!parsed.pool.equals(poolPubkey)) continue;
-    announcements.push({ commitment: parsed.commitment, createdAt: parsed.createdAt });
-  }
-
-  announcements.sort((a, b) => {
-    if (a.createdAt < b.createdAt) return -1;
-    if (a.createdAt > b.createdAt) return 1;
-    return 0;
-  });
-
-  const targetHex = bytesToHex(commitment);
-  const leafIndex = announcements.findIndex(
-    (a) => bytesToHex(a.commitment) === targetHex,
-  );
-  if (leafIndex === -1) {
-    throw new Error("Target commitment not found in pool note accounts");
-  }
-
-  const leaves = announcements.map((a) => a.commitment);
-
-  const poolAccount = await connection.getAccountInfo(poolPubkey, "confirmed");
-  if (!poolAccount) {
-    throw new Error("Pool account not found");
-  }
-  const poolState = parsePoolAccount(new Uint8Array(poolAccount.data));
-  const root = currentRoot(poolState);
-
-  const path = buildMerklePath(leafIndex, leaves);
-
-  return {
-    note: targetNote,
-    leafIndex: BigInt(leafIndex),
-    path,
-    root,
-  };
+  commitment: Uint8Array,
+): Promise<boolean> {
+  const [commitmentAccount] = deriveCommitment(Buffer.from(commitment));
+  const info = await connection.getAccountInfo(commitmentAccount, "confirmed");
+  return info?.owner.equals(POOL_PROGRAM_ID) ?? false;
 }
