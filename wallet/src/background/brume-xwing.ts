@@ -2,8 +2,8 @@
 import { x25519 } from "@noble/curves/ed25519";
 import { hkdf } from "@noble/hashes/hkdf";
 import { sha256 } from "@noble/hashes/sha256";
-import { NOTE_PLAINTEXT_SIZE, XWING_CIPHERTEXT_SIZE, XWING_PUBLIC_KEY_SIZE } from "@brume/sdk";
-import type { NoteDecryptor } from "@brume/sdk";
+import { NOTE_PLAINTEXT_SIZE, XWING_CIPHERTEXT_SIZE, XWING_PUBLIC_KEY_SIZE } from "./note-crypto-types";
+import type { NoteDecryptor } from "./note-crypto-types";
 
 const EPK_OFFSET = 0;
 const EPK_SIZE = 32;
