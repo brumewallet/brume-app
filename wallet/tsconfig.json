@@ -16,7 +16,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "resolveJsonModule": true,
-    "types": ["chrome", "vite/client"],
+    "types": ["chrome", "vite/client", "node"],
     "paths": {
       "@/*": ["./src/*"],
       "@brume/sdk": ["../../brume-protocol/sdk/src/index.ts"],
