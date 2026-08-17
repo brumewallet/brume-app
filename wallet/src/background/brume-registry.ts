@@ -1,22 +1,25 @@
 
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import {
-  buildRegistrationTxs,
-  deriveRegistry,
-  REGISTRY_PROGRAM_ID,
-  XWING_PUBLIC_KEY_SIZE,
+  deriveXWingKeyAccount,
+  openKeyAccountIx,
+  writeKeyChunkIx,
+  finalizeKeyIx,
+  fetchRecipientXWingKey as fetchXWingKeyAccount,
 } from "@brume/sdk";
+import { XWING_PUBLIC_KEY_SIZE } from "./note-crypto-types";
 import type { NetworkId } from "@/shared/constants";
 import { getConnection } from "./rpc";
 import { detailedTransactionFailureMessage } from "@/shared/errors";
 import { serializeUnknownForLog } from "@/shared/errors";
 
-const OFF_IS_FINALIZED = 9;
-const REGISTRY_ACCOUNT_MIN_SIZE = 10;
+// Mirrors brume_types::XWING_KEY_CHUNK_SIZE — a client-side chunking choice,
+// not on-chain protocol surface, so the SDK doesn't export it.
+const XWING_KEY_CHUNK_SIZE = 700;
 
 async function sendTxWithConfirmation(
   conn: Connection,
-  tx: import("@solana/web3.js").Transaction,
+  tx: Transaction,
   signer: Keypair,
   logContext: string,
 ): Promise<string> {
@@ -48,11 +51,7 @@ export async function isXWingRegistered(
   conn: Connection,
   owner: PublicKey,
 ): Promise<boolean> {
-  const [registry] = deriveRegistry(owner);
-  const info = await conn.getAccountInfo(registry, "confirmed");
-  if (!info || !info.owner.equals(REGISTRY_PROGRAM_ID)) return false;
-  if (info.data.length < REGISTRY_ACCOUNT_MIN_SIZE) return false;
-  return info.data[OFF_IS_FINALIZED] === 1;
+  return (await fetchXWingKeyAccount(conn, owner)) !== null;
 }
 
 export async function registerXWingKey(params: {
@@ -67,24 +66,26 @@ export async function registerXWingKey(params: {
 
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const owner = params.from.publicKey;
-  const [registry, registryBump] = deriveRegistry(owner);
+  const [keyAccount, bump] = deriveXWingKeyAccount(owner);
+  const key = Buffer.from(params.xwingPublicKey);
 
-  const txs = buildRegistrationTxs({
-    owner,
-    registry,
-    registryBump,
-    xwingPublicKey: params.xwingPublicKey,
-  });
+  const steps: [string, ReturnType<typeof openKeyAccountIx>][] = [
+    ["openKeyAccount", openKeyAccountIx({ owner, keyAccount, bump })],
+    [
+      "writeKeyChunk-1",
+      writeKeyChunkIx({ owner, keyAccount, bump, offset: 0, chunk: key.subarray(0, XWING_KEY_CHUNK_SIZE) }),
+    ],
+    [
+      "writeKeyChunk-2",
+      writeKeyChunkIx({ owner, keyAccount, bump, offset: XWING_KEY_CHUNK_SIZE, chunk: key.subarray(XWING_KEY_CHUNK_SIZE) }),
+    ],
+    ["finalizeKey", finalizeKeyIx({ owner, keyAccount, bump })],
+  ];
 
   let lastSig = "";
-  const labels = ["initializeRegistry", "uploadKeyChunk-1", "uploadKeyChunk-2", "finalizeRegistry"];
-  for (let i = 0; i < txs.length; i++) {
-    lastSig = await sendTxWithConfirmation(
-      conn,
-      txs[i]!,
-      params.from,
-      labels[i] ?? `tx-${i}`,
-    );
+  for (const [label, ix] of steps) {
+    const tx = new Transaction().add(ix);
+    lastSig = await sendTxWithConfirmation(conn, tx, params.from, label);
   }
 
   return { signature: lastSig };
@@ -95,18 +96,8 @@ export async function fetchRecipientXWingKey(
   recipientAddress: string,
 ): Promise<Uint8Array | null> {
   const recipient = new PublicKey(recipientAddress);
-  const [registry] = deriveRegistry(recipient);
-  const info = await conn.getAccountInfo(registry, "confirmed");
-  if (!info || !info.owner.equals(REGISTRY_PROGRAM_ID)) return null;
-
-  const data = info.data;
-  if (data.length < REGISTRY_ACCOUNT_MIN_SIZE) return null;
-  if (data[OFF_IS_FINALIZED] !== 1) return null;
-
-  const KEY_OFFSET = 42;
-  if (data.length < KEY_OFFSET + XWING_PUBLIC_KEY_SIZE) return null;
-
-  return new Uint8Array(data.slice(KEY_OFFSET, KEY_OFFSET + XWING_PUBLIC_KEY_SIZE));
+  const key = await fetchXWingKeyAccount(conn, recipient);
+  return key ? new Uint8Array(key) : null;
 }
 
 export async function getRegistrationStatus(params: {
