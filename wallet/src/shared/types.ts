@@ -140,16 +140,6 @@ export type ExtensionMessage =
         amount: string;
       };
     }
-  | {
-      type: "SHIELD_POOL";
-      requestId: string;
-      payload: { mint: string; amount: string };
-    }
-  | {
-      type: "UNSHIELD_POOL";
-      requestId: string;
-      payload: { mint: string; amount: string };
-    }
   | { type: "REQUEST_AIRDROP"; requestId: string }
   | {
       type: "GET_ACTIVITY";

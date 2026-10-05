@@ -2,4 +2,3 @@ packages:
   - "app"
   - "wallet"
   - "shared"
-  - "../brume-protocol/sdk"
