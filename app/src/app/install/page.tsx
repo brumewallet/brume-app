@@ -103,7 +103,7 @@ export default function InstallPage() {
           <p className="font-semibold text-ink">Mainnet uses real funds.</p>
           <p className="mt-1 text-sm leading-relaxed text-navy-500">
             Brume runs on Solana Mainnet and Devnet. Switch networks in Settings. Shield uses a
-            Loyal Smart Account vault; shielded balances are visible on-chain.
+            Brume vault; shielded balances are visible on-chain.
           </p>
         </div>
 

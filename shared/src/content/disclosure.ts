@@ -13,7 +13,7 @@ export const DISCLOSURE_ITEMS: DisclosureItem[] = [
   {
     id: "private-root-control",
     label: "Your keys and root control",
-    body: "Shield moves tokens into a vault of a Loyal Smart Account (Squads Smart Account Program). Your wallet key is the only signer, with a threshold of 1 and no time lock. Brume and Loyal do not hold a key that can move your vault funds.",
+    body: "Shield moves tokens into your Brume vault, a Smart Account on the Squads Smart Account Program. Your wallet key is the only signer, with a threshold of 1 and no time lock. Brume does not hold a key that can move your vault funds.",
     state: "private",
   },
   {

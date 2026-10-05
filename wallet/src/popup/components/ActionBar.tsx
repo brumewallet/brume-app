@@ -36,7 +36,7 @@ function Tile(props: {
   return <button type="button" className="flex flex-1" onClick={props.onClick}>{inner}</button>;
 }
 
-/** Send · Receive · Shield · Activity */
+// Send · Receive · Shield · Activity
 export function ActionBar() {
   return (
     <motion.div

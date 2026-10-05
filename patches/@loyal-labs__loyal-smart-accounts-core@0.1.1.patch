@@ -1,0 +1,54 @@
+diff --git a/dist/src/utils/compileToSynchronousMessageV2.js b/dist/src/utils/compileToSynchronousMessageV2.js
+index 3cf1bf46114e80e67c23b302abb4d44eeb838df5..98a2f94369b87f24b6dc66855125b6598b0b7f39 100644
+--- a/dist/src/utils/compileToSynchronousMessageV2.js
++++ b/dist/src/utils/compileToSynchronousMessageV2.js
+@@ -48,13 +48,13 @@ export function compileToSynchronousMessageAndAccountsV2({ vaultPda, members, in
+         });
+         // Concatenate the serialized instruction to the buffer
+         args_buffer = Buffer.concat([args_buffer, serialized_ix]);
+-        // Add the members as signers
+-        members.forEach((member) => {
+-            remainingAccounts.unshift({
+-                pubkey: member,
+-                isSigner: true,
+-                isWritable: false,
+-            });
++    });
++    // Add the members as signers after every instruction index is serialized
++    members.forEach((member) => {
++        remainingAccounts.unshift({
++            pubkey: member,
++            isSigner: true,
++            isWritable: false,
+         });
+     });
+     return {
+@@ -111,19 +111,17 @@ export function compileToSynchronousMessageAndAccountsV2WithHooks({ vaultPda, me
+         });
+         // Concatenate the serialized instruction to the buffer
+         args_buffer = Buffer.concat([args_buffer, serialized_ix]);
+-        // Add the members as signers
+-        members.forEach((member) => {
+-            remainingAccounts.unshift({
+-                pubkey: member,
+-                isSigner: true,
+-                isWritable: false,
+-            });
++    });
++    // Add the members, then hook accounts, after every instruction index is serialized
++    members.forEach((member) => {
++        remainingAccounts.unshift({
++            pubkey: member,
++            isSigner: true,
++            isWritable: false,
+         });
+-        // Add the pre hook accounts after the members
+-        remainingAccounts.splice(members.length, 0, ...preHookAccounts);
+-        // Add the post hook accounts after the pre hook accounts
+-        remainingAccounts.splice(members.length + preHookAccounts.length, 0, ...postHookAccounts);
+     });
++    remainingAccounts.splice(members.length, 0, ...preHookAccounts);
++    remainingAccounts.splice(members.length + preHookAccounts.length, 0, ...postHookAccounts);
+     return {
+         instructions: args_buffer,
+         accounts: remainingAccounts,

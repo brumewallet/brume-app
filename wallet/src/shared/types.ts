@@ -147,6 +147,12 @@ export type ExtensionMessage =
       payload: { level: PriorityLevel };
     }
   | { type: "GET_PRIORITY_FEES"; requestId: string }
+  | { type: "GET_EARN_STATE"; requestId: string }
+  | { type: "EARN_DEPOSIT"; requestId: string; payload: { amount: string } }
+  | { type: "EARN_WITHDRAW"; requestId: string; payload: { amount: string } }
+  | { type: "AUTO_EARN_ENABLE"; requestId: string; payload: { floor: string; monthlyCap: string } }
+  | { type: "AUTO_EARN_DISABLE"; requestId: string }
+  | { type: "AUTO_EARN_SWEEP_NOW"; requestId: string }
   | { type: "REQUEST_AIRDROP"; requestId: string }
   | {
       type: "GET_ACTIVITY";

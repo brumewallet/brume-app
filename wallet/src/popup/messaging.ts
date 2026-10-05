@@ -285,6 +285,33 @@ export function burnNft(mint: string, collection: string | null, standard: "mpl-
   });
 }
 
+type EarnState = import("@/background/earn-service").EarnState;
+
+export function getEarnState() {
+  return sendMessage<EarnState>({ type: "GET_EARN_STATE", requestId: crypto.randomUUID() });
+}
+
+export function earnDeposit(amount: string) {
+  return sendMessage<{ signatures: string[] }>({ type: "EARN_DEPOSIT", requestId: crypto.randomUUID(), payload: { amount } });
+}
+
+// Pass "all" to withdraw the whole position.
+export function earnWithdraw(amount: string) {
+  return sendMessage<{ signatures: string[] }>({ type: "EARN_WITHDRAW", requestId: crypto.randomUUID(), payload: { amount } });
+}
+
+export function enableAutoEarn(floor: string, monthlyCap: string) {
+  return sendMessage<{ signatures: string[] }>({ type: "AUTO_EARN_ENABLE", requestId: crypto.randomUUID(), payload: { floor, monthlyCap } });
+}
+
+export function disableAutoEarn() {
+  return sendMessage<{ signatures: string[] }>({ type: "AUTO_EARN_DISABLE", requestId: crypto.randomUUID() });
+}
+
+export function runAutoEarnNow() {
+  return sendMessage<unknown>({ type: "AUTO_EARN_SWEEP_NOW", requestId: crypto.randomUUID() });
+}
+
 export function getShieldBalances(mint: string) {
   const requestId = crypto.randomUUID();
   return sendMessage<{

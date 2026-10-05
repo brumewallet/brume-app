@@ -10,6 +10,7 @@ import { ApproveConnect } from "./pages/ApproveConnect";
 import { ApproveSign } from "./pages/ApproveSign";
 import { CreateWallet } from "./pages/CreateWallet";
 import { Dashboard } from "./pages/Dashboard";
+import { Earn } from "./pages/Earn";
 import { Disclosure } from "./pages/Disclosure";
 import { ImportPrivateKey } from "./pages/ImportPrivateKey";
 import { ImportOptions } from "./pages/ImportOptions";
@@ -138,6 +139,7 @@ export function App() {
             <Route index element={<Dashboard />} />
             <Route path="token/:mint" element={<TokenDetail />} />
             <Route path="shield" element={<Shield />} />
+            <Route path="earn" element={<Earn />} />
             <Route path="nfts" element={<NFTs />} />
             <Route path="activity" element={<Activity />} />
             <Route path="settings" element={<Settings />} />

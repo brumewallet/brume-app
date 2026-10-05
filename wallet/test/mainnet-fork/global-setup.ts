@@ -1,14 +1,4 @@
-// Starts solana-test-validator forked from mainnet-beta for the mainnet-fork fuzz suite.
-//
-// Cloned from mainnet: the Squads Smart Account program (the exact bytecode Loyal uses on
-// mainnet), its ProgramConfig account (real global index, treasury, creation fee), the
-// USDC mint, and the current Token-2022 program. A "whale" USDC token account is injected
-// so tests can move real-mainnet-shaped USDC.
-//
-// Env:
-//   BRUME_FORK_SOURCE_RPC  mainnet RPC to clone from (default: public mainnet-beta)
-//   BRUME_FORK_PORT        base port (default 18899; uses base..base+40)
-//   BRUME_FORK_KEEP=1      keep the ledger directory after the run
+// Starts a validator forked from mainnet-beta (Squads program, its config, USDC, Token-2022); env: BRUME_FORK_SOURCE_RPC, BRUME_FORK_PORT, BRUME_FORK_KEEP.
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -20,6 +10,7 @@ import type { TestProject } from "vitest/node";
 export const SQUADS_SMART_ACCOUNT_PROGRAM = "SMRTzfY6DfH5ik3TKiyLFfXexV8uSG3d2UksSCYdunG";
 export const MAINNET_USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+const SUBSCRIPTIONS_PROGRAM = "De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44";
 const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const WHALE_USDC_RAW = 1_000_000_000_000n; // 1,000,000 USDC
 
@@ -30,6 +21,54 @@ declare module "vitest" {
     usdcMint: string;
     mainnetConfig: { treasury: string; creationFee: string; smartAccountIndex: string };
   }
+}
+
+// Every program and existing account a live Kamino Earn deposit touches, so Earn runs against real mainnet state.
+async function kaminoCloneArgs(sourceRpc: string): Promise<string[]> {
+  const res = await fetch("https://api.kamino.finance/ktx/klend/deposit-instructions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      wallet: Keypair.generate().publicKey.toBase58(),
+      market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+      reserve: "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+      amount: "1",
+    }),
+  });
+  if (!res.ok) throw new Error(`Kamino API ${res.status}: cannot discover Earn accounts`);
+  const bundle = (await res.json()) as {
+    instructions: { programAddress: string; accounts?: { address: string }[] }[];
+    lutsByAddress?: Record<string, string[]>;
+  };
+  const keys = new Set<string>();
+  for (const ix of bundle.instructions) {
+    keys.add(ix.programAddress);
+    for (const a of ix.accounts ?? []) keys.add(a.address);
+  }
+  for (const [lut, addrs] of Object.entries(bundle.lutsByAddress ?? {})) {
+    keys.add(lut);
+    addrs.forEach((a) => keys.add(a));
+  }
+  const already = new Set([SQUADS_SMART_ACCOUNT_PROGRAM, TOKEN_2022_PROGRAM, SUBSCRIPTIONS_PROGRAM, MAINNET_USDC_MINT]);
+  const list = [...keys].filter((k) => !already.has(k)).map((k) => new PublicKey(k));
+  const conn = new Connection(sourceRpc, "confirmed");
+  const args: string[] = [];
+  for (let i = 0; i < list.length; i += 100) {
+    const chunk = list.slice(i, i + 100);
+    const infos = await conn.getMultipleAccountsInfo(chunk);
+    chunk.forEach((k, j) => {
+      const info = infos[j];
+      if (!info) return;
+      if (info.executable) {
+        if (info.owner.toBase58() === "BPFLoaderUpgradeab1e11111111111111111111111" && k.toBase58() !== TOKEN_PROGRAM) {
+          args.push("--clone-upgradeable-program", k.toBase58());
+        }
+        return;
+      }
+      args.push("--maybe-clone", k.toBase58());
+    });
+  }
+  return args;
 }
 
 async function waitForRpc(url: string, proc: ChildProcess, logFile: string): Promise<void> {
@@ -119,7 +158,9 @@ export default async function setup(project: TestProject) {
     "--clone", configPda.toBase58(),
     "--clone", MAINNET_USDC_MINT,
     "--clone-upgradeable-program", TOKEN_2022_PROGRAM,
+    "--clone-upgradeable-program", SUBSCRIPTIONS_PROGRAM,
     "--account", whaleAta.toBase58(), whaleAtaFile,
+    ...(await kaminoCloneArgs(sourceRpc)),
   ];
   const log = fs.openSync(logFile, "a");
   const proc = spawn("solana-test-validator", args, { stdio: ["ignore", log, log] });

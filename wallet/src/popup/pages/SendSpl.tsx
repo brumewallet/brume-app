@@ -265,8 +265,8 @@ export function SendSpl() {
               ) : null}
               {fromPrivateBalance ? (
                 <p className="text-center text-[11px] text-muted-foreground">
-                  Sends from your shielded balance in your Loyal Smart Account
-                  vault. The recipient receives a standard token transfer.
+                  Sends from your shielded balance in your Brume vault. The
+                  recipient receives a standard token transfer.
                 </p>
               ) : (
                 <p className="text-center text-[11px] text-muted-foreground">

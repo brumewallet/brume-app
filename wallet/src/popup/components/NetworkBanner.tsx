@@ -1,6 +1,6 @@
 import { NETWORKS, type NetworkId } from "@/shared/constants";
 
-/** Full-width network strip under the account header (reference Home / Shield / token). */
+// Full-width network strip under the account header (reference Home / Shield / token).
 export function NetworkBanner({ network }: { network: NetworkId }) {
   const label = NETWORKS[network].label;
   return (

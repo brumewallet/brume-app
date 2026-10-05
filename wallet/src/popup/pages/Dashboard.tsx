@@ -125,6 +125,21 @@ export function Dashboard() {
 
       <ActionBar />
 
+      <Link
+        to="/earn"
+        className="flex items-center justify-between rounded-2xl bg-card px-4 py-3 transition-colors hover:bg-secondary"
+      >
+        <span className="flex flex-col">
+          <span className="text-[14px] font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
+            Earn on USDC
+          </span>
+          <span className="text-[12px] text-muted-foreground">Supply USDC to Kamino, or let auto-earn do it</span>
+        </span>
+        <span className="text-[18px] text-muted-foreground" aria-hidden>
+          ›
+        </span>
+      </Link>
+
       <motion.div
         className="border-b border-border pb-2 pt-1"
         initial={{ opacity: 0 }}

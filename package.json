@@ -10,6 +10,9 @@
   "pnpm": {
     "overrides": {
       "react-refresh": "0.17.0"
+    },
+    "patchedDependencies": {
+      "@loyal-labs/loyal-smart-accounts-core@0.1.1": "patches/@loyal-labs__loyal-smart-accounts-core@0.1.1.patch"
     }
   },
   "devDependencies": {

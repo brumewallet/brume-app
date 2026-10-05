@@ -30,6 +30,7 @@
   "host_permissions": [
     "https://api.devnet.solana.com/*",
     "https://api.mainnet-beta.solana.com/*",
+    "https://api.kamino.finance/*",
     "https://rpc.magicblock.app/*",
     "https://brume.cash/*",
     "https://*.magicblock.app/*",

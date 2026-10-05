@@ -1,10 +1,10 @@
-// Adds ComputeBudget instructions (unit limit + unit price) to wallet-built transactions on
-// mainnet. Policy and math live in @/shared/priority-fee; this file does the RPC work.
+// Adds ComputeBudget instructions to wallet-built mainnet transactions; policy and math live in @/shared/priority-fee.
 import {
   ComputeBudgetProgram,
   PublicKey,
   TransactionMessage,
   VersionedTransaction,
+  type AddressLookupTableAccount,
   type Connection,
   type Transaction,
   type TransactionInstruction,
@@ -64,8 +64,9 @@ export async function estimatePriorityPrice(
 async function simulateUnits(
   conn: Connection,
   payer: PublicKey,
-  ixs: TransactionInstruction[],
+  ixs: readonly TransactionInstruction[],
   price: number,
+  lookupTables: readonly AddressLookupTableAccount[] = [],
 ): Promise<number | null> {
   try {
     const message = new TransactionMessage({
@@ -76,7 +77,7 @@ async function simulateUnits(
         ComputeBudgetProgram.setComputeUnitPrice({ microLamports: price }),
         ...ixs,
       ],
-    }).compileToV0Message();
+    }).compileToV0Message([...lookupTables]);
     const sim = await conn.simulateTransaction(new VersionedTransaction(message), {
       sigVerify: false,
       replaceRecentBlockhash: true,
@@ -90,12 +91,27 @@ async function simulateUnits(
   }
 }
 
-/**
- * Mainnet only: prepend setComputeUnitLimit (simulated usage + headroom) and
- * setComputeUnitPrice (recent fees on the written accounts, per the chosen level).
- * Call after all instructions are added and before signing. No-op on other networks
- * or when the transaction already sets its own compute budget.
- */
+// Mainnet only: ComputeBudget instructions to put in front of `ixs`, or [] when not needed.
+export async function computeBudgetInstructions(params: {
+  conn: Connection;
+  network: NetworkId;
+  payer: PublicKey;
+  ixs: readonly TransactionInstruction[];
+  lookupTables?: readonly AddressLookupTableAccount[];
+  level?: PriorityLevel;
+}): Promise<TransactionInstruction[]> {
+  const { conn, network, payer, ixs } = params;
+  if (!priorityFeesApply(network) || ixs.some(isComputeBudgetIx)) return [];
+  const level = normalizePriorityLevel(params.level);
+  const price = await estimatePriorityPrice(conn, level, ixs);
+  const units = await simulateUnits(conn, payer, ixs, price, params.lookupTables);
+  return [
+    ComputeBudgetProgram.setComputeUnitLimit({ units: computeUnitLimitFor(units, ixs.length) }),
+    ComputeBudgetProgram.setComputeUnitPrice({ microLamports: price }),
+  ];
+}
+
+// Mainnet only: prepends compute limit and price to a legacy transaction; call after adding instructions, before signing.
 export async function applyPriorityFee(params: {
   conn: Connection;
   network: NetworkId;
@@ -125,11 +141,11 @@ export async function applyPriorityFee(params: {
 export type PriorityFeeQuote = {
   level: PriorityLevel;
   microLamportsPerCu: number;
-  /** Base fee + priority fee for a TYPICAL_COMPUTE_UNITS transaction with one signature. */
+  // Base fee plus priority fee for a typical one-signature transaction.
   typicalTotalLamports: number;
 };
 
-/** Network-wide estimate per level, for the Settings screen. */
+// Network-wide estimate per level, for the Settings screen.
 export async function quotePriorityFees(conn: Connection): Promise<PriorityFeeQuote[]> {
   const fees = await recentFees(conn, []);
   return PRIORITY_LEVELS.map((level) => {

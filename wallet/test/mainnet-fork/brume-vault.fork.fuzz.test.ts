@@ -1,12 +1,4 @@
-// Stateful (model-based) fuzz of Loyal vault shield / unshield / send against a local
-// validator forked from mainnet-beta (see global-setup.ts). Every command runs the real
-// wallet code (loyal-vault.ts) with network "mainnet-beta"; after every command the
-// on-chain state is read back with raw RPC calls and compared with an independent model.
-//
-// Run:        pnpm test:fuzz:mainnet
-// More runs:  FUZZ_RUNS=50 FUZZ_MAX_COMMANDS=60 pnpm test:fuzz:mainnet   (default 12 x 40)
-// Trace:      FUZZ_TRACE=1 prints each executed command sequence
-// Reproduce:  FC_SEED=<seed> FC_PATH=<path> pnpm test:fuzz:mainnet   (printed on failure)
+// Mainnet-fork stateful fuzz of Brume vault shield, unshield and send; env: FUZZ_RUNS, FUZZ_MAX_COMMANDS, FUZZ_TRACE, FC_SEED, FC_PATH.
 import fc from "fast-check";
 import {
   ExtensionType,
@@ -37,12 +29,12 @@ import {
 import { PROGRAM_ID, accounts, codecs, generated, pda } from "@loyal-labs/loyal-smart-accounts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import {
-  fetchLoyalVaultBalances,
-  loyalShield,
-  loyalVaultPdaFor,
-  loyalVaultTransferOut,
+  fetchShieldVaultBalances,
+  brumeShield,
+  shieldVaultPdaFor,
+  brumeVaultTransferOut,
   parseTokenAmount,
-} from "@/background/loyal-vault";
+} from "@/background/brume-vault";
 import { encodeBase58 } from "@/shared/base58";
 import {
   MAX_PRICE_MICRO_LAMPORTS,
@@ -52,15 +44,14 @@ import {
 } from "@/shared/priority-fee";
 
 const NETWORK = "mainnet-beta" as const;
-const STORAGE_KEY = "brume_loyal_vault_v1";
+const STORAGE_KEY = "brume_vault_v1";
 const SOL = "So11111111111111111111111111111111111111112";
 const U64 = 2n ** 64n;
 const FUZZ_RUNS = Number(process.env.FUZZ_RUNS ?? 12);
 const MAX_COMMANDS = Number(process.env.FUZZ_MAX_COMMANDS ?? 40);
 const SETTINGS_FIRST_SIGNER_OFFSET = 124;
 
-// ---------------------------------------------------------------------------------------
-// chrome.storage stub (the module persists the Settings PDA there)
+// chrome.storage stub (the vault module stores the Settings PDA there).
 
 const storage: Record<string, unknown> = {};
 (globalThis as unknown as { chrome: unknown }).chrome = {
@@ -77,8 +68,7 @@ const clearStorage = () => {
 const storedSettings = (owner: PublicKey): string | undefined =>
   (storage[STORAGE_KEY] as Record<string, string> | undefined)?.[`${NETWORK}:${owner.toBase58()}`];
 
-// ---------------------------------------------------------------------------------------
-// Fork environment (built once)
+// Fork environment, built once.
 
 type MintKey = "SOL" | "USDC" | "SPL0" | "SPL9F" | "T22" | "T22FEE";
 type MintSpec = {
@@ -134,8 +124,7 @@ function transferFee(spec: MintSpec, amount: bigint): bigint {
   return raw < spec.maxFee! ? raw : spec.maxFee!;
 }
 
-// ---------------------------------------------------------------------------------------
-// Model / real system
+// Model and real system.
 
 type Model = {
   settings: PublicKey | null;
@@ -172,7 +161,7 @@ async function ownedSettingsCount(conn: Connection, owner: PublicKey): Promise<n
   return hits.length;
 }
 
-/** Independent read of every balance and authority invariant, compared with the model. */
+// Independent read of every balance and authority invariant, compared with the model.
 async function checkInvariants(m: Model, r: Real, label: string) {
   const { conn, owner } = r;
   const ctx = (what: string) => `${label}: ${what}`;
@@ -192,7 +181,7 @@ async function checkInvariants(m: Model, r: Real, label: string) {
     expect(s.signers[0].permissions.mask, ctx("signer permissions")).toBe(codecs.Permissions.all().mask);
   }
 
-  const vault = m.settings ? loyalVaultPdaFor(m.settings) : null;
+  const vault = m.settings ? shieldVaultPdaFor(m.settings) : null;
   expect(vault ? BigInt(await conn.getBalance(vault, "confirmed")) : 0n, ctx("vault SOL")).toBe(m.vault.SOL);
 
   for (const key of TOKEN_KEYS) {
@@ -219,15 +208,14 @@ async function checkInvariants(m: Model, r: Real, label: string) {
 
   // The wallet's own read path must agree with the chain whenever it knows the vault.
   if (stored) {
-    const view = await fetchLoyalVaultBalances({ conn, network: NETWORK, owner: owner.publicKey });
+    const view = await fetchShieldVaultBalances({ conn, network: NETWORK, owner: owner.publicKey });
     for (const key of ["SOL", ...TOKEN_KEYS] as MintKey[]) {
       expect(BigInt(view[env.mints[key].address] ?? "0"), ctx(`module view ${key}`)).toBe(m.vault[key]);
     }
   }
 }
 
-// ---------------------------------------------------------------------------------------
-// Amount selection: resolved against the model at run time so boundaries get hit.
+// Amounts are resolved against the model at run time so boundaries get hit.
 
 type Sel =
   | { k: "permille"; p: number }
@@ -294,7 +282,7 @@ async function attempt(f: () => Promise<unknown>): Promise<{ ok: boolean; err?: 
   }
 }
 
-/** Reads a landed wallet transaction back and checks its compute budget. */
+// Reads a landed wallet transaction back and checks its compute budget.
 async function assertComputeBudget(conn: Connection, signature: string, level: PriorityLevel, label: string) {
   const tx = await conn.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
   expect(tx, `${label}: landed transaction`).not.toBeNull();
@@ -323,8 +311,7 @@ function assertOutcome(label: string, exp: Expect, res: { ok: boolean; err?: str
   if (exp === "reject") expect(res.ok, `${label} should be rejected`).toBe(false);
 }
 
-// ---------------------------------------------------------------------------------------
-// Commands
+// Commands.
 
 class ShieldCmd implements fc.AsyncCommand<Model, Real> {
   constructor(
@@ -354,9 +341,9 @@ class ShieldCmd implements fc.AsyncCommand<Model, Real> {
     } else exp = amt <= m.wallet[this.key] ? "ok" : "reject";
 
     const conn = this.race && !m.settings ? racingConnection(r.conn) : r.conn;
-    let result: Awaited<ReturnType<typeof loyalShield>> | undefined;
+    let result: Awaited<ReturnType<typeof brumeShield>> | undefined;
     const res = await attempt(async () => {
-      result = await loyalShield({ conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: text, priority: this.level });
+      result = await brumeShield({ conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: text, priority: this.level });
     });
     assertOutcome(`${this} amount=${amt} text=${JSON.stringify(text)}`, exp, res);
     count(`${this.race ? "race-shield" : "shield"} ${this.key}`, res.ok ? "ok" : "rejected");
@@ -399,7 +386,7 @@ class TransferOutCmd implements fc.AsyncCommand<Model, Real> {
     }
     const spec = env.mints[this.key];
     const isSol = this.key === "SOL";
-    const vault = m.settings ? loyalVaultPdaFor(m.settings) : null;
+    const vault = m.settings ? shieldVaultPdaFor(m.settings) : null;
     const dest =
       this.to === "owner" ? r.owner.publicKey : this.to === "self" ? vault : r.recipients[this.to].publicKey;
     const amt = resolveSel(this.sel, m.vault[this.key], isSol ? m.vault.SOL - env.rentMin : 1n);
@@ -418,7 +405,7 @@ class TransferOutCmd implements fc.AsyncCommand<Model, Real> {
 
     let signature: string | undefined;
     const res = await attempt(async () => {
-      ({ signature } = await loyalVaultTransferOut({
+      ({ signature } = await brumeVaultTransferOut({
         conn: r.conn,
         network: NETWORK,
         from: r.owner,
@@ -455,7 +442,7 @@ class ForgetStorageCmd implements fc.AsyncCommand<Model, Real> {
   }
 }
 
-/** Someone who is not the vault's signer tries to drain it through executeTransactionSync. */
+// Someone who is not the vault's signer tries to drain it through executeTransactionSync.
 class StrangerDrainCmd implements fc.AsyncCommand<Model, Real> {
   constructor(readonly key: MintKey, readonly variant: "stranger-member" | "owner-unsigned") {}
   check = (m: Readonly<Model>) => m.settings != null && m.vault[this.key] > 0n;
@@ -463,7 +450,7 @@ class StrangerDrainCmd implements fc.AsyncCommand<Model, Real> {
   async run(m: Model, r: Real) {
     const spec = env.mints[this.key];
     const thief = env.stranger;
-    const vault = loyalVaultPdaFor(m.settings!);
+    const vault = shieldVaultPdaFor(m.settings!);
     const amount = m.vault[this.key];
     const outer: TransactionInstruction[] = [];
     let inner: TransactionInstruction;
@@ -510,7 +497,7 @@ class StrangerDrainCmd implements fc.AsyncCommand<Model, Real> {
   }
 }
 
-/** Malformed amount text must be refused before anything is signed. */
+// Malformed amount text must be refused before anything is signed.
 class GarbageAmountCmd implements fc.AsyncCommand<Model, Real> {
   constructor(readonly key: MintKey, readonly op: "shield" | "unshield", readonly text: string) {}
   check = () => true;
@@ -522,8 +509,8 @@ class GarbageAmountCmd implements fc.AsyncCommand<Model, Real> {
     if (parses) return; // a valid amount; covered by the other commands
     const res = await attempt(() =>
       this.op === "shield"
-        ? loyalShield({ conn: r.conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: this.text })
-        : loyalVaultTransferOut({ conn: r.conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: this.text }),
+        ? brumeShield({ conn: r.conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: this.text })
+        : brumeVaultTransferOut({ conn: r.conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: this.text }),
     );
     expect(res.ok, `${this} must be rejected`).toBe(false);
     count(`garbage-amount ${this.op}`, "rejected");
@@ -531,18 +518,18 @@ class GarbageAmountCmd implements fc.AsyncCommand<Model, Real> {
   }
 }
 
-/** The issuer freezes the vault token account (USDC/USDT can do this on mainnet). */
+// The issuer freezes the vault token account (USDC/USDT can do this on mainnet).
 class UnshieldWhileFrozenCmd implements fc.AsyncCommand<Model, Real> {
   check = (m: Readonly<Model>) => m.settings != null && m.vaultAtas.has("SPL9F") && m.vault.SPL9F > 0n;
   toString = () => "UnshieldWhileFrozen(SPL9F)";
   async run(m: Model, r: Real) {
     const spec = env.mints.SPL9F;
     const mint = new PublicKey(spec.address);
-    const ata = getAssociatedTokenAddressSync(mint, loyalVaultPdaFor(m.settings!), true);
+    const ata = getAssociatedTokenAddressSync(mint, shieldVaultPdaFor(m.settings!), true);
     await freezeAccount(r.conn, env.payer, ata, mint, env.payer, [], { commitment: "confirmed" });
     try {
       const res = await attempt(() =>
-        loyalVaultTransferOut({ conn: r.conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: formatAmount(1n, spec.decimals, { thousands: false, trailingZeros: 0, pad: "" }) }),
+        brumeVaultTransferOut({ conn: r.conn, network: NETWORK, from: r.owner, mintAddress: spec.address, amountStr: formatAmount(1n, spec.decimals, { thousands: false, trailingZeros: 0, pad: "" }) }),
       );
       expect(res.ok, `${this} must be rejected`).toBe(false);
       count("unshield-while-frozen", "rejected");
@@ -553,10 +540,7 @@ class UnshieldWhileFrozenCmd implements fc.AsyncCommand<Model, Real> {
   }
 }
 
-/**
- * A Connection whose first getLatestBlockhash lets a competitor create a Smart Account at
- * the global index this wallet just derived, forcing the "index taken" retry path.
- */
+// A Connection whose first getLatestBlockhash lets a competitor create a Smart Account at the global index this wallet just derived, forcing the "index taken" retry path.
 function racingConnection(conn: Connection): Connection {
   let fired = false;
   return new Proxy(conn, {
@@ -645,7 +629,7 @@ const commandsArb = fc.commands(
 
 // ---------------------------------------------------------------------------------------
 
-describe("Loyal vault on a mainnet-beta fork", () => {
+describe("Brume vault on a mainnet-beta fork", () => {
   beforeAll(async () => {
     const conn = new Connection(inject("forkRpc"), "confirmed");
     const payer = Keypair.generate();

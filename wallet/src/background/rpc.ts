@@ -35,11 +35,11 @@ import {
 import type { PriorityLevel } from "@/shared/priority-fee";
 import { applyPriorityFee } from "./priority-fee";
 import {
-  fetchLoyalVaultBalance,
-  fetchLoyalVaultBalances,
-  loyalShield,
-  loyalVaultTransferOut,
-} from "./loyal-vault";
+  fetchShieldVaultBalance,
+  fetchShieldVaultBalances,
+  brumeShield,
+  brumeVaultTransferOut,
+} from "./brume-vault";
 
 async function sendRawTransactionWithDetailedLogs(
   conn: Connection,
@@ -477,7 +477,7 @@ export async function fetchSplAtaBalanceRawForOwner(
   return bal.value.amount;
 }
 
-// Shielded balance = funds in the wallet's Loyal Smart Account vault (see loyal-vault.ts).
+// Shielded balance = funds in the wallet's Brume vault (see brume-vault.ts).
 
 export async function fetchShieldBalanceInfo(params: {
   network: NetworkId;
@@ -510,7 +510,7 @@ export async function fetchShieldBalanceInfo(params: {
           },
           "confirmed",
         ).catch(() => "0"),
-    fetchLoyalVaultBalance({
+    fetchShieldVaultBalance({
       conn,
       network: params.network,
       owner: new PublicKey(owner),
@@ -526,7 +526,7 @@ export async function fetchShieldBalancesForOwner(params: {
   rpcUrlOverride?: string | null;
   ownerAddress: string;
 }): Promise<Record<string, string>> {
-  return fetchLoyalVaultBalances({
+  return fetchShieldVaultBalances({
     conn: getConnection(params.network, params.rpcUrlOverride),
     network: params.network,
     owner: new PublicKey(params.ownerAddress.trim()),
@@ -541,7 +541,7 @@ export async function shieldSplToken(params: {
   rpcUrlOverride?: string | null;
   priority?: PriorityLevel;
 }): Promise<{ signature: string }> {
-  const { signature } = await loyalShield({
+  const { signature } = await brumeShield({
     conn: getConnection(params.network, params.rpcUrlOverride),
     network: params.network,
     from: params.from,
@@ -560,7 +560,7 @@ export async function unshieldSplToken(params: {
   rpcUrlOverride?: string | null;
   priority?: PriorityLevel;
 }): Promise<{ signature: string }> {
-  const { signature } = await loyalVaultTransferOut({
+  const { signature } = await brumeVaultTransferOut({
     conn: getConnection(params.network, params.rpcUrlOverride),
     network: params.network,
     from: params.from,
@@ -582,7 +582,7 @@ export async function sendFromShieldedBalance(params: {
 }): Promise<{ signature: string; route: "private" }> {
   const toTrim = params.toAddress.trim();
   if (!toTrim) throw new Error("Recipient required");
-  const { signature } = await loyalVaultTransferOut({
+  const { signature } = await brumeVaultTransferOut({
     conn: getConnection(params.network, params.rpcUrlOverride),
     network: params.network,
     from: params.from,

@@ -1,10 +1,4 @@
-// Shield / unshield through a Loyal Smart Account vault (Squads Smart Account Program).
-//
-// Shield   = move SOL/SPL from the wallet into vault index 0 of a 1-of-1 Smart Account
-//            whose only signer is the wallet key (created on first shield, time lock 0).
-// Unshield = executeTransactionSync moves funds from the vault back to the wallet.
-//
-// The wallet key stays the root signer; the Settings PDA never holds funds.
+// Brume vault: shield moves funds into vault 0 of a 1-of-1 Smart Account owned by the wallet key; unshield moves them back.
 import {
   PROGRAM_ID,
   accounts,
@@ -34,19 +28,17 @@ import {
 } from "@/shared/spl-token-inline";
 import { applyPriorityFee } from "./priority-fee";
 
-export const LOYAL_VAULT_ACCOUNT_INDEX = 0;
+export const SHIELD_VAULT_INDEX = 0;
 
-const STORAGE_KEY = "brume_loyal_vault_v1";
+const STORAGE_KEY = "brume_vault_v1";
 
-// Byte offset of signers[0].key in a Settings account (archivalAuthority is stored as a
-// fixed 33-byte option on-chain; verified against devnet). Used only to rediscover the
-// Settings PDA if local storage was cleared; every hit is decoded and checked.
+// Offset of signers[0].key in a Settings account (verified on-chain); used to rediscover a lost Settings PDA.
 const SETTINGS_FIRST_SIGNER_OFFSET =
   8 + 16 + 32 + 2 + 4 + 8 + 8 + 33 + 8 + 1 + 4;
 
-export type LoyalVaultBalances = Record<string, string>;
+export type ShieldVaultBalances = Record<string, string>;
 
-export type LoyalVaultTransferResult = {
+export type BrumeVaultTransferResult = {
   signature: string;
   settingsPda: string;
   vaultPda: string;
@@ -76,10 +68,10 @@ async function writeSettingsAddress(
   await chrome.storage.local.set({ [STORAGE_KEY]: map });
 }
 
-export function loyalVaultPdaFor(settingsPda: PublicKey): PublicKey {
+export function shieldVaultPdaFor(settingsPda: PublicKey): PublicKey {
   const [vault] = pda.getSmartAccountPda({
     settingsPda,
-    accountIndex: LOYAL_VAULT_ACCOUNT_INDEX,
+    accountIndex: SHIELD_VAULT_INDEX,
   });
   return vault;
 }
@@ -131,8 +123,8 @@ async function discoverSettingsOnChain(
   return best?.pubkey ?? null;
 }
 
-/** Stored Settings PDA for this wallet, falling back to an on-chain lookup. */
-export async function resolveLoyalSettings(params: {
+// Stored Settings PDA for this wallet, falling back to an on-chain lookup.
+export async function resolveBrumeSettings(params: {
   conn: Connection;
   network: NetworkId;
   owner: PublicKey;
@@ -213,8 +205,7 @@ async function buildCreateSettingsIx(
   const config = await accounts.ProgramConfig.fromAccountAddress(conn, configPda, "confirmed");
   const nextIndex = BigInt(config.smartAccountIndex.toString()) + 1n;
   const [settingsPda] = pda.getSettingsPda({ accountIndex: nextIndex });
-  // Same accounts/args as the SDK's smartAccounts create builder (settings PDA goes in
-  // remaining accounts); called through `generated` because the feature typings don't resolve.
+  // Same accounts and args as the SDK create builder; uses `generated` because the feature typings do not resolve.
   const ix = generated.createCreateSmartAccountInstruction(
     {
       programConfig: configPda,
@@ -238,7 +229,7 @@ async function buildCreateSettingsIx(
   return { settingsPda, ix };
 }
 
-/** True when the Settings PDA we derived was taken by another creator before our tx landed. */
+// True when another creator took our derived Settings PDA before our transaction landed.
 async function settingsIndexWasTaken(
   conn: Connection,
   settingsPda: PublicKey,
@@ -248,19 +239,19 @@ async function settingsIndexWasTaken(
   return info != null && !(await isOwnedSettings(conn, settingsPda, owner));
 }
 
-/** One RPC call per token program; returns raw balances keyed by mint (SOL under SOL_WRAPPED_MINT). */
-export async function fetchLoyalVaultBalances(params: {
+// Raw vault balances keyed by mint (SOL under SOL_WRAPPED_MINT).
+export async function fetchShieldVaultBalances(params: {
   conn: Connection;
   network: NetworkId;
   owner: PublicKey;
-}): Promise<LoyalVaultBalances> {
+}): Promise<ShieldVaultBalances> {
   // getProgramAccounts is heavy; do the on-chain lookup at most once per wallet per session.
   const key = storageKey(params.network, params.owner.toBase58());
   const discover = !discoveryAttempted.has(key);
   discoveryAttempted.add(key);
-  const settings = await resolveLoyalSettings({ ...params, discover });
+  const settings = await resolveBrumeSettings({ ...params, discover });
   if (!settings) return {};
-  const vault = loyalVaultPdaFor(settings);
+  const vault = shieldVaultPdaFor(settings);
   const [lamports, legacy, t22] = await Promise.all([
     params.conn.getBalance(vault, "confirmed"),
     params.conn.getParsedTokenAccountsByOwner(vault, { programId: TOKEN_PROGRAM_ID }, "confirmed"),
@@ -270,7 +261,7 @@ export async function fetchLoyalVaultBalances(params: {
       "confirmed",
     ),
   ]);
-  const out: LoyalVaultBalances = { [SOL_WRAPPED_MINT]: String(lamports) };
+  const out: ShieldVaultBalances = { [SOL_WRAPPED_MINT]: String(lamports) };
   for (const { account } of [...legacy.value, ...t22.value]) {
     const info = (account.data as { parsed?: { info?: Record<string, unknown> } }).parsed?.info;
     const mint = typeof info?.mint === "string" ? info.mint : null;
@@ -281,25 +272,50 @@ export async function fetchLoyalVaultBalances(params: {
   return out;
 }
 
-export async function fetchLoyalVaultBalance(params: {
+export async function fetchShieldVaultBalance(params: {
   conn: Connection;
   network: NetworkId;
   owner: PublicKey;
   mintAddress: string;
 }): Promise<string> {
-  const all = await fetchLoyalVaultBalances(params);
+  const all = await fetchShieldVaultBalances(params);
   return all[params.mintAddress] ?? "0";
 }
 
-/** Shield: wallet -> Loyal vault. Creates the Smart Account in the same tx on first use. */
-export async function loyalShield(params: {
+// Settings PDA for this wallet; creates the Smart Account if missing (Shield uses vault 0, Earn uses vault 1).
+export async function ensureBrumeSettings(params: {
+  conn: Connection;
+  network: NetworkId;
+  from: Keypair;
+  priority?: PriorityLevel;
+}): Promise<PublicKey> {
+  const { conn, network, from } = params;
+  const owner = from.publicKey;
+  const existing = await resolveBrumeSettings({ conn, network, owner, discover: true });
+  if (existing) return existing;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { settingsPda, ix } = await buildCreateSettingsIx(conn, owner);
+    try {
+      await sendAndConfirm(conn, network, from, [ix], params.priority);
+      await writeSettingsAddress(network, owner.toBase58(), settingsPda.toBase58());
+      return settingsPda;
+    } catch (e) {
+      if (attempt < 2 && (await settingsIndexWasTaken(conn, settingsPda, owner))) continue;
+      throw e;
+    }
+  }
+  throw new Error("Could not create Brume Smart Account");
+}
+
+// Shield: wallet to vault; creates the Smart Account in the same transaction on first use.
+export async function brumeShield(params: {
   conn: Connection;
   network: NetworkId;
   from: Keypair;
   mintAddress: string;
   amountStr: string;
   priority?: PriorityLevel;
-}): Promise<LoyalVaultTransferResult> {
+}): Promise<BrumeVaultTransferResult> {
   const { conn, network, from } = params;
   const owner = from.publicKey;
   const isSol = params.mintAddress === SOL_WRAPPED_MINT;
@@ -307,7 +323,7 @@ export async function loyalShield(params: {
   const mintInfo = isSol ? null : await readMint(conn, mint);
   const amount = parseTokenAmount(params.amountStr, isSol ? 9 : mintInfo!.decimals);
 
-  const existing = await resolveLoyalSettings({ conn, network, owner, discover: true });
+  const existing = await resolveBrumeSettings({ conn, network, owner, discover: true });
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const ixs: TransactionInstruction[] = [];
@@ -317,7 +333,7 @@ export async function loyalShield(params: {
       settingsPda = created.settingsPda;
       ixs.push(created.ix);
     }
-    const vault = loyalVaultPdaFor(settingsPda);
+    const vault = shieldVaultPdaFor(settingsPda);
 
     if (isSol) {
       const current = BigInt(await conn.getBalance(vault, "confirmed"));
@@ -360,11 +376,11 @@ export async function loyalShield(params: {
       throw e;
     }
   }
-  throw new Error("Could not create Loyal Smart Account");
+  throw new Error("Could not create Brume Smart Account");
 }
 
-/** Vault -> destination via executeTransactionSync, signed by the wallet (sole signer). */
-export async function loyalVaultTransferOut(params: {
+// Vault to destination through executeTransactionSync, signed by the wallet.
+export async function brumeVaultTransferOut(params: {
   conn: Connection;
   network: NetworkId;
   from: Keypair;
@@ -372,12 +388,12 @@ export async function loyalVaultTransferOut(params: {
   amountStr: string;
   toAddress?: string;
   priority?: PriorityLevel;
-}): Promise<LoyalVaultTransferResult> {
+}): Promise<BrumeVaultTransferResult> {
   const { conn, network, from } = params;
   const owner = from.publicKey;
-  const settingsPda = await resolveLoyalSettings({ conn, network, owner, discover: true });
+  const settingsPda = await resolveBrumeSettings({ conn, network, owner, discover: true });
   if (!settingsPda) throw new Error("No shielded balance");
-  const vault = loyalVaultPdaFor(settingsPda);
+  const vault = shieldVaultPdaFor(settingsPda);
   const dest = params.toAddress ? new PublicKey(params.toAddress.trim()) : owner;
   const isSol = params.mintAddress === SOL_WRAPPED_MINT;
   const mint = new PublicKey(params.mintAddress);
@@ -437,7 +453,7 @@ export async function loyalVaultTransferOut(params: {
       },
       {
         args: {
-          accountIndex: LOYAL_VAULT_ACCOUNT_INDEX,
+          accountIndex: SHIELD_VAULT_INDEX,
           numSigners: 1,
           instructions,
         },

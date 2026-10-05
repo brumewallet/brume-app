@@ -3,8 +3,7 @@ import { defineConfig } from "vitest/config";
 
 // token-list is a vendored upstream package with its own tests; only test/ is ours.
 const alias = { "@": path.resolve(__dirname, "src") };
-// The Loyal SDK ships extensionless directory imports that Node's ESM loader rejects;
-// let Vite transform it like the extension build does.
+// The SDK uses directory imports that Node ESM rejects, so Vite transforms it.
 const server = { deps: { inline: [/@loyal-labs\//] } };
 
 export default defineConfig({
@@ -20,8 +19,7 @@ export default defineConfig({
         },
       },
       {
-        // Starts a local validator forked from mainnet-beta (real Squads Smart Account
-        // program bytecode, program config and USDC mint). Needs network access once.
+        // Starts a local validator forked from mainnet-beta; needs network access once.
         resolve: { alias },
         test: {
           name: "mainnet-fork",

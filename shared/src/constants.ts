@@ -21,9 +21,7 @@ export const NETWORKS = {
   "mainnet-beta": {
     id: "mainnet-beta" as const,
     label: "Mainnet",
-    // Public endpoint: rate-limited and not meant for production traffic. Users can set an
-    // RPC override in Settings; the API server reads MAINNET_RPC_URL.
-    // (rpc.magicblock.app/mainnet answers 403 Access Restricted.)
+    // Public, rate-limited endpoint; override in Settings or with MAINNET_RPC_URL on the API.
     rpc: "https://api.mainnet-beta.solana.com",
     explorerTx: (sig: string) => `https://explorer.solana.com/tx/${sig}`,
     explorerAddress: (addr: string) =>

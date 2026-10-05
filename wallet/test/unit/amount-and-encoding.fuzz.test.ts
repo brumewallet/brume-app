@@ -1,11 +1,8 @@
-// Property-based fuzz for the money-input boundary of shield / unshield / send:
-// the decimal-string parsers and the u64 instruction encoders. Pure, no network.
-//
-// Reproduce a failure: FC_SEED=<seed> FC_PATH=<path> pnpm test
+// Fuzz of amount parsing and u64 encoding for shield, unshield and send; reproduce with FC_SEED and FC_PATH.
 import fc from "fast-check";
 import { Keypair, SystemProgram } from "@solana/web3.js";
 import { describe, expect, it } from "vitest";
-import { parseTokenAmount } from "@/background/loyal-vault";
+import { parseTokenAmount } from "@/background/brume-vault";
 import { humanAmountToTokenRaw } from "@/background/rpc";
 import {
   createBurnCheckedInstruction,
@@ -23,7 +20,7 @@ const params: fc.Parameters<unknown> = {
 const decimalsArb = fc.integer({ min: 0, max: 18 });
 const rawArb = fc.bigInt({ min: 1n, max: U64_MAX });
 
-/** Canonical decimal string for a raw amount, plus cosmetic variants a user may type. */
+// Canonical decimal string for a raw amount, plus cosmetic variants a user may type.
 const formattedArb = fc
   .record({
     decimals: decimalsArb,
@@ -44,7 +41,7 @@ const formattedArb = fc
     return { decimals, raw, text };
   });
 
-/** Strings built from characters that commonly appear in pasted / mistyped amounts. */
+// Strings built from characters that commonly appear in pasted / mistyped amounts.
 const nastyArb = fc.string({
   unit: fc.constantFrom(
     ..."0123456789..,,-+eExX_ \t\n".split(""),
@@ -61,7 +58,7 @@ function outcome(f: () => bigint): { ok: true; v: bigint } | { ok: false } {
   }
 }
 
-describe("parseTokenAmount (Loyal vault input)", () => {
+describe("parseTokenAmount (Brume vault input)", () => {
   it("round-trips every formatted u64 amount at every decimals", () => {
     fc.assert(
       fc.property(formattedArb, ({ decimals, raw, text }) => {

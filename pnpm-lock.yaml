@@ -7,6 +7,11 @@ settings:
 overrides:
   react-refresh: 0.17.0
 
+patchedDependencies:
+  '@loyal-labs/loyal-smart-accounts-core@0.1.1':
+    hash: 442timtco4jpbqfrxy2u7sql6q
+    path: patches/@loyal-labs__loyal-smart-accounts-core@0.1.1.patch
+
 importers:
 
   .:
@@ -108,12 +113,15 @@ importers:
       '@hugeicons/react':
         specifier: ^1.1.6
         version: 1.1.6(react@19.2.5)
+      '@loyal-labs/actions':
+        specifier: 0.1.1
+        version: 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)
       '@loyal-labs/loyal-smart-accounts':
         specifier: 0.1.1
-        version: 0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
+        version: 0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@loyal-labs/smart-account-vaults':
         specifier: 0.1.2
-        version: 0.1.2(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
+        version: 0.1.2(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@noble/curves':
         specifier: ^1.6.0
         version: 1.9.7
@@ -183,7 +191,7 @@ importers:
         version: 2.4.0(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0))
       '@solana/spl-token':
         specifier: 0.4.15
-        version: 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
+        version: 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@tailwindcss/vite':
         specifier: ^4.0.0
         version: 4.2.2(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0))
@@ -4739,9 +4747,9 @@ snapshots:
 
   '@kurkle/color@0.3.4': {}
 
-  '@loyal-labs/actions@0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@loyal-labs/actions@0.1.1(bufferutil@4.1.0)(typescript@5.7.3)':
     dependencies:
-      '@loyal-labs/solana-rpc': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@loyal-labs/solana-rpc': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - bufferutil
@@ -4749,13 +4757,13 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@loyal-labs/loyal-smart-accounts-core@0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@loyal-labs/loyal-smart-accounts-core@0.1.1(patch_hash=442timtco4jpbqfrxy2u7sql6q)(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
     dependencies:
-      '@loyal-labs/solana-rpc': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@loyal-labs/solana-rpc': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)
       '@metaplex-foundation/beet': 0.7.1
-      '@metaplex-foundation/beet-solana': 0.4.0(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@metaplex-foundation/beet-solana': 0.4.0(bufferutil@4.1.0)(typescript@5.7.3)
       '@metaplex-foundation/cusper': 0.0.2
-      '@solana/spl-token': 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@solana/spl-token': 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
       assert: 2.1.0
       bn.js: 5.2.3
@@ -4769,9 +4777,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@loyal-labs/loyal-smart-accounts@0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@loyal-labs/loyal-smart-accounts@0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
     dependencies:
-      '@loyal-labs/loyal-smart-accounts-core': 0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@loyal-labs/loyal-smart-accounts-core': 0.1.1(patch_hash=442timtco4jpbqfrxy2u7sql6q)(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - bufferutil
@@ -4788,14 +4796,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@loyal-labs/smart-account-vaults@0.1.2(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@loyal-labs/smart-account-vaults@0.1.2(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
     dependencies:
-      '@loyal-labs/actions': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
-      '@loyal-labs/loyal-smart-accounts': 0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
-      '@loyal-labs/loyal-smart-accounts-core': 0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
-      '@loyal-labs/solana-instruction-decoder': 0.1.1(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
-      '@loyal-labs/solana-wallet': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
-      '@solana/spl-token': 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@loyal-labs/actions': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)
+      '@loyal-labs/loyal-smart-accounts': 0.1.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
+      '@loyal-labs/loyal-smart-accounts-core': 0.1.1(patch_hash=442timtco4jpbqfrxy2u7sql6q)(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
+      '@loyal-labs/solana-instruction-decoder': 0.1.1(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
+      '@loyal-labs/solana-wallet': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)
+      '@solana/spl-token': 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
       bn.js: 5.2.3
       bs58: 6.0.0
@@ -4807,9 +4815,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@loyal-labs/solana-instruction-decoder@0.1.1(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@loyal-labs/solana-instruction-decoder@0.1.1(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
     dependencies:
-      '@solana/spl-token': 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@solana/spl-token': 0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
       buffer: 6.0.3
     transitivePeerDependencies:
@@ -4819,7 +4827,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@loyal-labs/solana-rpc@0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@loyal-labs/solana-rpc@0.1.1(bufferutil@4.1.0)(typescript@5.7.3)':
     dependencies:
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
@@ -4828,10 +4836,10 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@loyal-labs/solana-wallet@0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@loyal-labs/solana-wallet@0.1.1(bufferutil@4.1.0)(typescript@5.7.3)':
     dependencies:
       '@loyal-labs/shared': 0.1.1
-      '@loyal-labs/solana-rpc': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
+      '@loyal-labs/solana-rpc': 0.1.1(bufferutil@4.1.0)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
       bs58: 6.0.0
     transitivePeerDependencies:
@@ -4841,7 +4849,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@metaplex-foundation/beet-solana@0.4.0(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@metaplex-foundation/beet-solana@0.4.0(bufferutil@4.1.0)(typescript@5.7.3)':
     dependencies:
       '@metaplex-foundation/beet': 0.7.1
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
@@ -5413,7 +5421,7 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
-  '@solana/buffer-layout-utils@0.3.0(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@solana/buffer-layout-utils@0.3.0(bufferutil@4.1.0)(typescript@5.7.3)':
     dependencies:
       '@solana/buffer-layout': 4.0.1
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
@@ -5500,7 +5508,7 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/spl-token-group@0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
+  '@solana/spl-token-group@0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
     dependencies:
       '@solana/codecs': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
@@ -5508,7 +5516,7 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - typescript
 
-  '@solana/spl-token-metadata@0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
+  '@solana/spl-token-metadata@0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
     dependencies:
       '@solana/codecs': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
@@ -5516,12 +5524,12 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - typescript
 
-  '@solana/spl-token@0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@6.0.6)':
+  '@solana/spl-token@0.4.15(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)':
     dependencies:
       '@solana/buffer-layout': 4.0.1
-      '@solana/buffer-layout-utils': 0.3.0(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
-      '@solana/spl-token-group': 0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
-      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
+      '@solana/buffer-layout-utils': 0.3.0(bufferutil@4.1.0)(typescript@5.7.3)
+      '@solana/spl-token-group': 0.0.7(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
+      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.7.3))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.7.3)(utf-8-validate@6.0.6)
       buffer: 6.0.3
     transitivePeerDependencies:

@@ -28,7 +28,7 @@ import {
   keypairFromSecretKeyImport,
   normalizeMnemonic,
 } from "@/shared/wallet-core";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { ApprovalQueue } from "./approval-queue";
 import {
   fetchBrumeActivity,
@@ -57,6 +57,7 @@ import {
   getConnection,
 } from "./rpc";
 import { priorityFeesApply, quotePriorityFees } from "./priority-fee";
+import * as earnService from "./earn-service";
 import { clearPersisted, loadVault, saveVault } from "./storage";
 import {
   isPortfolioCacheFresh,
@@ -117,8 +118,15 @@ void loadAndApplyUiSurface();
 // --- Auto-lock: periodic alarm check ---
 try {
   chrome.alarms.create(AUTO_LOCK_ALARM, { periodInMinutes: 1 });
+  chrome.alarms.create(earnService.AUTO_EARN_ALARM, { periodInMinutes: earnService.AUTO_EARN_INTERVAL_MINUTES });
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === AUTO_LOCK_ALARM) void checkAutoLock();
+    // Auto-earn sweeps use only each wallet's automation key, so they also run while the wallet is locked.
+    if (alarm.name === earnService.AUTO_EARN_ALARM) {
+      void loadVault()
+        .then((v) => earnService.sweepAllAccounts(v, normalizePriorityLevel(v?.priorityLevel)))
+        .catch((e) => console.error("[Brume] auto-earn sweep failed", e));
+    }
   });
 } catch {
   // alarms may be unavailable in some test contexts
@@ -1103,6 +1111,52 @@ async function handleMessage(
             ok: false,
             error: walletError(4002, messageFromUnknown(e)),
           });
+        }
+        return;
+      }
+
+      case "GET_EARN_STATE": {
+        const p = await getVaultOrThrow();
+        const owner = sessionKeypair?.publicKey ?? new PublicKey(accountById(p, p.activeAccountId)!.keystore.address);
+        const ctx = { network: p.network, rpcUrlOverride: p.rpcUrlOverride ?? null };
+        try {
+          sendResponse({ ok: true, payload: await earnService.getEarnState(ctx, owner) });
+        } catch (e) {
+          sendResponse({ ok: false, error: walletError(4002, messageFromUnknown(e)) });
+        }
+        return;
+      }
+
+      case "EARN_DEPOSIT":
+      case "EARN_WITHDRAW":
+      case "AUTO_EARN_ENABLE":
+      case "AUTO_EARN_DISABLE":
+      case "AUTO_EARN_SWEEP_NOW": {
+        if (!sessionKeypair) {
+          sendResponse({ ok: false, error: walletError(WalletErrorCodes.WalletNotReady, "Locked") });
+          return;
+        }
+        const p = await getVaultOrThrow();
+        const ctx = {
+          network: p.network,
+          rpcUrlOverride: p.rpcUrlOverride ?? null,
+          priority: normalizePriorityLevel(p.priorityLevel),
+        };
+        try {
+          const result =
+            raw.type === "EARN_DEPOSIT"
+              ? await earnService.deposit(ctx, sessionKeypair, raw.payload.amount)
+              : raw.type === "EARN_WITHDRAW"
+                ? await earnService.withdraw(ctx, sessionKeypair, raw.payload.amount.trim().toLowerCase() === "all" ? "all" : raw.payload.amount)
+                : raw.type === "AUTO_EARN_ENABLE"
+                  ? await earnService.enableAuto(ctx, sessionKeypair, raw.payload.floor, raw.payload.monthlyCap)
+                  : raw.type === "AUTO_EARN_DISABLE"
+                    ? await earnService.disableAuto(ctx, sessionKeypair)
+                    : await earnService.sweepOne(ctx, sessionKeypair.publicKey);
+          await refreshWalletData({ forcePortfolio: true });
+          sendResponse({ ok: true, payload: result });
+        } catch (e) {
+          sendResponse({ ok: false, error: walletError(4002, messageFromUnknown(e)) });
         }
         return;
       }
