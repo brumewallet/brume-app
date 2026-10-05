@@ -102,7 +102,7 @@ export default function InstallPage() {
         <div className="mt-8 max-w-xl rounded-2xl border-l-2 border-amber-400 glass p-5">
           <p className="font-semibold text-ink">Devnet only - no real funds at risk.</p>
           <p className="mt-1 text-sm leading-relaxed text-navy-500">
-            The on-chain shielded pool is deployed to Solana Devnet. All tokens are test tokens.
+            Shield uses a Loyal Smart Account vault on Solana Devnet. All tokens are test tokens.
             Mainnet deployment will follow after Phase 2 ZK proving is complete.
           </p>
         </div>

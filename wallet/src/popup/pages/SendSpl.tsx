@@ -279,14 +279,12 @@ export function SendSpl() {
               ) : null}
               {fromPrivateBalance ? (
                 <p className="text-center text-[11px] text-muted-foreground">
-                  Sends from your shielded balance on MagicBlock Payments
-                  (ephemeral → ephemeral, private). The recipient receives on
-                  their shielded balance.
+                  Sends from your shielded balance in your Loyal Smart Account
+                  vault. The recipient receives a standard token transfer.
                 </p>
               ) : (
                 <p className="text-center text-[11px] text-muted-foreground">
-                  Wallet sends use MagicBlock private payments on base when
-                  available, otherwise a standard SPL transfer.
+                  Standard SPL transfer from your wallet.
                 </p>
               )}
               {!state.simpleMode ? (

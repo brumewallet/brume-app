@@ -41,11 +41,12 @@ import {
   unwrapSol,
   wrapSol,
   fetchShieldBalanceInfo,
+  fetchShieldBalancesForOwner,
   fetchSolBalanceBaseUnits,
   requestAirdropDevnet,
-  sendSolPreferMagicBlockPrivate,
-  sendSplPreferMagicBlockPrivate,
-  sendSplPrivateEphemeral,
+  sendFromShieldedBalance,
+  sendSol,
+  sendSplToken,
   fetchSplAtaBalanceRawForOwner,
   shieldSplToken,
   signAllTransactionBytes,
@@ -288,22 +289,13 @@ async function fetchShieldBalancesMapForMints(params: {
       params.mints.map((m) => m.trim()).filter((m) => m.length >= 32),
     ),
   ].slice(0, 48);
-  const entries = await Promise.all(
-    capped.map(async (mintAddress) => {
-      try {
-        const info = await fetchShieldBalanceInfo({
-          network: params.network,
-          rpcUrlOverride: params.rpcUrlOverride,
-          ownerAddress: params.owner,
-          mintAddress,
-        });
-        return [mintAddress, info.privateBalanceRaw] as const;
-      } catch {
-        return [mintAddress, "0"] as const;
-      }
-    }),
-  );
-  return Object.fromEntries(entries);
+  // One vault read covers every mint; mints not held in the vault report "0".
+  const vault = await fetchShieldBalancesForOwner({
+    network: params.network,
+    rpcUrlOverride: params.rpcUrlOverride,
+    ownerAddress: params.owner,
+  }).catch(() => ({}) as Record<string, string>);
+  return Object.fromEntries(capped.map((m) => [m, vault[m] ?? "0"]));
 }
 
 async function mergeShieldBalancesIntoCache(params: {
@@ -1123,7 +1115,7 @@ async function handleMessage(
           });
           return;
         }
-        const { signature, route } = await sendSolPreferMagicBlockPrivate({
+        const signature = await sendSol({
           network: p.network,
           from: sessionKeypair,
           toAddress: raw.payload.to.trim(),
@@ -1133,7 +1125,7 @@ async function handleMessage(
         await refreshWalletData({ forcePortfolio: true });
         sendResponse({
           ok: true,
-          payload: { signature, solSendRoute: route },
+          payload: { signature, solSendRoute: "standard" },
         });
         return;
       }
@@ -1169,23 +1161,20 @@ async function handleMessage(
           return;
         }
         try {
+          const sendParams = {
+            network: p.network,
+            from: sessionKeypair,
+            toAddress: to,
+            mintAddress: mint,
+            amountStr: amount,
+            rpcUrlOverride: p.rpcUrlOverride ?? null,
+          };
           const { signature, route } = fromPrivateBalance
-            ? await sendSplPrivateEphemeral({
-                network: p.network,
-                from: sessionKeypair,
-                toAddress: to,
-                mintAddress: mint,
-                amountStr: amount,
-                rpcUrlOverride: p.rpcUrlOverride ?? null,
-              })
-            : await sendSplPreferMagicBlockPrivate({
-                network: p.network,
-                from: sessionKeypair,
-                toAddress: to,
-                mintAddress: mint,
-                amountStr: amount,
-                rpcUrlOverride: p.rpcUrlOverride ?? null,
-              });
+            ? await sendFromShieldedBalance(sendParams)
+            : {
+                signature: await sendSplToken(sendParams),
+                route: "standard" as const,
+              };
           await refreshWalletData({ forcePortfolio: true });
           sendResponse({
             ok: true,

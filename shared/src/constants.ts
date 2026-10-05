@@ -37,47 +37,6 @@ export const DEFAULT_BRUME_API_ORIGIN = "http://localhost:3000";
 export const SOL_WRAPPED_MINT =
   "So11111111111111111111111111111111111111112" as const;
 
-export const MAGICBLOCK_PAYMENTS_API_BASE_URL =
-  "https://payments.magicblock.app";
-
-export const MAGICBLOCK_DEVNET_TEE_ER_HTTP =
-  "https://devnet-tee.magicblock.app" as const;
-
-export const MAGICBLOCK_DEVNET_TEE_VALIDATOR =
-  "FnE6VJT5QNZdedZPnCoLsARgBwoE6DeJNjBs2H1gySXA" as const;
-
-export function paymentsClusterForNetwork(
-  network: NetworkId,
-): "devnet" | "mainnet" {
-  return network === "mainnet-beta" ? "mainnet" : "devnet";
-}
-
-export const MAGICBLOCK_PER_EPHEMERAL_HTTP_DEVNET =
-  "https://devnet-as.magicblock.app" as const;
-export const MAGICBLOCK_PER_EPHEMERAL_HTTP_MAINNET =
-  "https://tee.magicblock.app" as const;
-
-export function magicblockPerEphemeralSubmitHttp(network: NetworkId): string {
-  return network === "mainnet-beta"
-    ? MAGICBLOCK_PER_EPHEMERAL_HTTP_MAINNET
-    : MAGICBLOCK_PER_EPHEMERAL_HTTP_DEVNET;
-}
-
-export function magicblockPerEphemeralAuthHttp(network: NetworkId): string {
-  if (network === "devnet") {
-    return MAGICBLOCK_DEVNET_TEE_ER_HTTP.replace(/\/+$/, "");
-  }
-  return magicblockPerEphemeralSubmitHttp(network).replace(/\/+$/, "");
-}
-
-// auth from `getAuthToken`.
-
-export function magicblockPerEphemeralSkipTeeIntegrityVerify(
-  network: NetworkId,
-): boolean {
-  return network === "devnet";
-}
-
 export function isShieldFeatureEnabled(network: NetworkId): boolean {
   return network === "devnet";
 }

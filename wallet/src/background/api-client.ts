@@ -1,10 +1,6 @@
 import { DEFAULT_BRUME_API_ORIGIN } from "@/shared/constants";
 import type { NetworkId } from "@/shared/constants";
-import {
-  normalizeUnsignedPaymentTransaction,
-  type PortfolioTokenRow,
-  type UnsignedPaymentTransaction,
-} from "@brume/shared";
+import type { PortfolioTokenRow } from "@brume/shared";
 
 export function getBrumeApiOrigin(): string {
   return DEFAULT_BRUME_API_ORIGIN.replace(/\/$/, "");
@@ -125,58 +121,6 @@ export async function fetchBrumeTokenMetadata(
     throw new Error(`Brume API ${res.status}${t ? `: ${t.slice(0, 160)}` : ""}`);
   }
   return (await res.json()) as TokenMetadataApiResponse;
-}
-
-// page - callers should fall back to Payments API directly.
-
-export async function fetchBrumePerTransferUnsigned(params: {
-  from: string;
-  to: string;
-  mint: string;
-  amount: number;
-  network: NetworkId;
-  rpcUrlOverride: string | null;
-}): Promise<UnsignedPaymentTransaction | null> {
-  const origin = getBrumeApiOrigin();
-  const url = `${origin}/api/per/transfer/unsigned`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: params.from,
-      to: params.to,
-      mint: params.mint,
-      amount: params.amount,
-      network: params.network,
-      ...(params.rpcUrlOverride ? { rpcUrl: params.rpcUrlOverride } : {}),
-    }),
-  });
-
-  const text = await res.text();
-
-  if (res.status === 404) {
-    return null;
-  }
-
-  let data: unknown;
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    if (!res.ok) {
-      return null;
-    }
-    throw new Error(`Brume API: expected JSON (HTTP ${res.status})`);
-  }
-
-  if (!res.ok) {
-    const err = (data as { error?: string }).error;
-    if (typeof err === "string" && err.trim()) {
-      throw new Error(err.trim());
-    }
-    return null;
-  }
-
-  return normalizeUnsignedPaymentTransaction(data);
 }
 
 export type NftItem = {

@@ -113,7 +113,7 @@ export function SendSol() {
               </div>
             </div>
             <p className="text-center text-[11px] text-muted-foreground">
-              SOL sends use MagicBlock private payments when available.
+              Standard SOL transfer from your wallet.
             </p>
             <FieldGroup className="gap-4">
               <Field>
