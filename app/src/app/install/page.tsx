@@ -5,7 +5,7 @@ import { BrumeMark, BrumeWordmark } from "@/components/marketing/logo";
 export const metadata: Metadata = {
   title: "Install Brume Beta · Brume",
   description:
-    "Load the Brume wallet extension in Chrome in three steps. Devnet only - no real funds at risk.",
+    "Load the Brume wallet extension in Chrome in three steps. Runs on Solana Mainnet and Devnet.",
 };
 
 const STEPS = [
@@ -88,7 +88,7 @@ export default function InstallPage() {
         <div className="max-w-2xl">
           <span className="inline-flex items-center gap-2 rounded-full glass-soft px-3.5 py-1.5 text-xs font-medium text-navy-500">
             <span className="h-1.5 w-1.5 rounded-full bg-ube-400" />
-            Beta · Devnet only
+            Beta · Mainnet &amp; Devnet
           </span>
           <h1 className="mt-5 font-display text-[clamp(2.25rem,5vw,3.25rem)] tracking-tightest text-ink">
             Install the beta in three steps.
@@ -100,10 +100,10 @@ export default function InstallPage() {
         </div>
 
         <div className="mt-8 max-w-xl rounded-2xl border-l-2 border-amber-400 glass p-5">
-          <p className="font-semibold text-ink">Devnet only - no real funds at risk.</p>
+          <p className="font-semibold text-ink">Mainnet uses real funds.</p>
           <p className="mt-1 text-sm leading-relaxed text-navy-500">
-            Shield uses a Loyal Smart Account vault on Solana Devnet. All tokens are test tokens.
-            Mainnet deployment will follow after Phase 2 ZK proving is complete.
+            Brume runs on Solana Mainnet and Devnet. Switch networks in Settings. Shield uses a
+            Loyal Smart Account vault; shielded balances are visible on-chain.
           </p>
         </div>
 

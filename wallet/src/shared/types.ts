@@ -1,4 +1,5 @@
 import type { ExplorerId, NetworkId } from "./constants";
+import type { PriorityLevel } from "./priority-fee";
 import type { PortfolioTokenRow } from "@brume/shared";
 export type { PortfolioTokenRow };
 
@@ -140,6 +141,12 @@ export type ExtensionMessage =
         amount: string;
       };
     }
+  | {
+      type: "SET_PRIORITY_LEVEL";
+      requestId: string;
+      payload: { level: PriorityLevel };
+    }
+  | { type: "GET_PRIORITY_FEES"; requestId: string }
   | { type: "REQUEST_AIRDROP"; requestId: string }
   | {
       type: "GET_ACTIVITY";
@@ -230,6 +237,8 @@ export interface WalletUiState {
 
   explorerId: ExplorerId;
 
+  priorityLevel: PriorityLevel;
+
   portfolioTokens: PortfolioTokenRow[] | null;
 
   shieldedBalancesByMint: Record<string, string>;
@@ -301,6 +310,7 @@ export interface PersistedVault {
   network: NetworkId;
   rpcUrlOverride?: string | null;
   explorerId?: ExplorerId;
+  priorityLevel?: PriorityLevel;
   allowlist: string[];
   blocklist: string[];
   simpleMode: boolean;

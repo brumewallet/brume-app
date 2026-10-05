@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
+import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
 
-const RPC: Record<string, string> = {
-  devnet: "https://rpc.magicblock.app/devnet",
-  "mainnet-beta": "https://rpc.magicblock.app/mainnet",
-};
 
 const HELIUS_KEY = process.env.HELIUS_API_KEY ?? "";
 console.log("[api/nfts] HELIUS_KEY loaded:", HELIUS_KEY ? `${HELIUS_KEY.slice(0, 8)}…` : "(empty)");
@@ -28,8 +25,8 @@ export type NftItem = {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const owner = searchParams.get("owner");
-  const network = searchParams.get("network") ?? "devnet";
-  const rpcUrl = heliusRpc(network) ?? searchParams.get("rpcUrl") ?? RPC[network] ?? RPC["devnet"];
+  const network = networkFromParam(searchParams.get("network"));
+  const rpcUrl = heliusRpc(network) ?? searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
 
   if (!owner) return NextResponse.json({ error: "owner required" }, { status: 400 });
 

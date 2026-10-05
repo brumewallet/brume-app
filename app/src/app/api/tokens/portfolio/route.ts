@@ -2,11 +2,8 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";
 import { NextResponse } from "next/server";
+import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
 
-const RPC: Record<string, string> = {
-  devnet: "https://rpc.magicblock.app/devnet",
-  "mainnet-beta": "https://rpc.magicblock.app/mainnet",
-};
 
 type TokenMeta = { symbol: string; name: string; logoURI?: string; decimals: number };
 
@@ -62,8 +59,8 @@ async function getTokenMap(): Promise<Map<string, TokenMeta>> {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const owner = searchParams.get("owner");
-  const network = searchParams.get("network") ?? "devnet";
-  const rpcUrl = searchParams.get("rpcUrl") ?? RPC[network] ?? RPC["devnet"];
+  const network = networkFromParam(searchParams.get("network"));
+  const rpcUrl = searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
 
   if (!owner) {
     return NextResponse.json({ error: "owner is required" }, { status: 400 });

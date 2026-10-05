@@ -21,7 +21,10 @@ export const NETWORKS = {
   "mainnet-beta": {
     id: "mainnet-beta" as const,
     label: "Mainnet",
-    rpc: "https://rpc.magicblock.app/mainnet",
+    // Public endpoint: rate-limited and not meant for production traffic. Users can set an
+    // RPC override in Settings; the API server reads MAINNET_RPC_URL.
+    // (rpc.magicblock.app/mainnet answers 403 Access Restricted.)
+    rpc: "https://api.mainnet-beta.solana.com",
     explorerTx: (sig: string) => `https://explorer.solana.com/tx/${sig}`,
     explorerAddress: (addr: string) =>
       `https://explorer.solana.com/address/${addr}`,
@@ -37,6 +40,6 @@ export const DEFAULT_BRUME_API_ORIGIN = "http://localhost:3000";
 export const SOL_WRAPPED_MINT =
   "So11111111111111111111111111111111111111112" as const;
 
-export function isShieldFeatureEnabled(network: NetworkId): boolean {
-  return network === "devnet";
+export function isNetworkId(v: unknown): v is NetworkId {
+  return typeof v === "string" && Object.prototype.hasOwnProperty.call(NETWORKS, v);
 }

@@ -33,6 +33,16 @@ export function getAssociatedTokenAddressSync(
   return addr;
 }
 
+const U64_MAX = 2n ** 64n - 1n;
+
+// DataView.setBigUint64 wraps modulo 2^64; a wrapped amount would move a different value.
+function assertU64(amount: bigint): bigint {
+  if (amount < 0n || amount > U64_MAX) {
+    throw new Error("Amount out of range");
+  }
+  return amount;
+}
+
 export function createAssociatedTokenAccountIdempotentInstruction(
   payer: PublicKey,
   associatedToken: PublicKey,
@@ -64,7 +74,7 @@ export function createBurnCheckedInstruction(
 ): TransactionInstruction {
   const data = new Uint8Array(10);
   data[0] = 15;
-  new DataView(data.buffer).setBigUint64(1, amount, true);
+  new DataView(data.buffer).setBigUint64(1, assertU64(amount), true);
   data[9] = decimals;
   return new TransactionInstruction({
     programId,
@@ -113,7 +123,7 @@ export function createTransferCheckedInstruction(
 ): TransactionInstruction {
   const data = new Uint8Array(10);
   data[0] = 12;
-  new DataView(data.buffer).setBigUint64(1, amount, true);
+  new DataView(data.buffer).setBigUint64(1, assertU64(amount), true);
   data[9] = decimals;
   return new TransactionInstruction({
     programId,

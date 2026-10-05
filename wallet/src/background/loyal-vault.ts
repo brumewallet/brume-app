@@ -23,6 +23,7 @@ import {
 } from "@solana/web3.js";
 import { encodeBase58 } from "@/shared/base58";
 import { SOL_WRAPPED_MINT, type NetworkId } from "@/shared/constants";
+import type { PriorityLevel } from "@/shared/priority-fee";
 import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -31,6 +32,7 @@ import {
   getAssociatedTokenAddressSync,
   tokenProgramPubkey,
 } from "@/shared/spl-token-inline";
+import { applyPriorityFee } from "./priority-fee";
 
 export const LOYAL_VAULT_ACCOUNT_INDEX = 0;
 
@@ -166,7 +168,7 @@ async function readMint(conn: Connection, mint: PublicKey): Promise<MintInfo> {
   };
 }
 
-function parseAmount(amountStr: string, decimals: number): bigint {
+export function parseTokenAmount(amountStr: string, decimals: number): bigint {
   const t = amountStr.trim().replace(/,/g, "");
   const m = t.match(/^(\d*)(?:\.(\d+))?$/);
   if (!t || t === "." || !m) throw new Error("Invalid amount");
@@ -178,13 +180,16 @@ function parseAmount(amountStr: string, decimals: number): bigint {
 
 async function sendAndConfirm(
   conn: Connection,
+  network: NetworkId,
   signer: Keypair,
   ixs: TransactionInstruction[],
+  priority?: PriorityLevel,
 ): Promise<string> {
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
   const tx = new Transaction({ feePayer: signer.publicKey, recentBlockhash: blockhash }).add(
     ...ixs,
   );
+  await applyPriorityFee({ conn, network, tx, level: priority });
   tx.sign(signer);
   const sig = await conn.sendRawTransaction(tx.serialize(), {
     skipPreflight: false,
@@ -293,13 +298,14 @@ export async function loyalShield(params: {
   from: Keypair;
   mintAddress: string;
   amountStr: string;
+  priority?: PriorityLevel;
 }): Promise<LoyalVaultTransferResult> {
   const { conn, network, from } = params;
   const owner = from.publicKey;
   const isSol = params.mintAddress === SOL_WRAPPED_MINT;
   const mint = new PublicKey(params.mintAddress);
   const mintInfo = isSol ? null : await readMint(conn, mint);
-  const amount = parseAmount(params.amountStr, isSol ? 9 : mintInfo!.decimals);
+  const amount = parseTokenAmount(params.amountStr, isSol ? 9 : mintInfo!.decimals);
 
   const existing = await resolveLoyalSettings({ conn, network, owner, discover: true });
 
@@ -337,7 +343,7 @@ export async function loyalShield(params: {
     }
 
     try {
-      const signature = await sendAndConfirm(conn, from, ixs);
+      const signature = await sendAndConfirm(conn, network, from, ixs, params.priority);
       if (!existing) {
         await writeSettingsAddress(network, owner.toBase58(), settingsPda.toBase58());
       }
@@ -365,6 +371,7 @@ export async function loyalVaultTransferOut(params: {
   mintAddress: string;
   amountStr: string;
   toAddress?: string;
+  priority?: PriorityLevel;
 }): Promise<LoyalVaultTransferResult> {
   const { conn, network, from } = params;
   const owner = from.publicKey;
@@ -379,7 +386,7 @@ export async function loyalVaultTransferOut(params: {
   let inner: TransactionInstruction;
 
   if (isSol) {
-    const amount = parseAmount(params.amountStr, 9);
+    const amount = parseTokenAmount(params.amountStr, 9);
     const have = BigInt(await conn.getBalance(vault, "confirmed"));
     if (have < amount) throw new Error("Insufficient shielded balance");
     const left = have - amount;
@@ -400,7 +407,7 @@ export async function loyalVaultTransferOut(params: {
     inner = SystemProgram.transfer({ fromPubkey: vault, toPubkey: dest, lamports: amount });
   } else {
     const { decimals, programId } = await readMint(conn, mint);
-    const amount = parseAmount(params.amountStr, decimals);
+    const amount = parseTokenAmount(params.amountStr, decimals);
     const src = getAssociatedTokenAddressSync(mint, vault, programId);
     const dst = getAssociatedTokenAddressSync(mint, dest, programId);
     const bal = await conn.getTokenAccountBalance(src, "confirmed").catch(() => null);
@@ -439,6 +446,6 @@ export async function loyalVaultTransferOut(params: {
     ),
   );
 
-  const signature = await sendAndConfirm(conn, from, outer);
+  const signature = await sendAndConfirm(conn, network, from, outer, params.priority);
   return { signature, settingsPda: settingsPda.toBase58(), vaultPda: vault.toBase58() };
 }

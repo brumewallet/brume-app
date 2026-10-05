@@ -53,9 +53,9 @@ export const DISCLOSURE_ITEMS: DisclosureItem[] = [
     state: "roadmap",
   },
   {
-    id: "devnet-only",
-    label: "Devnet only (current status)",
-    body: "Shield and unshield are available on Solana Devnet only. All shielded balances on devnet are test tokens with no real-world value.",
+    id: "networks",
+    label: "Mainnet and Devnet",
+    body: "Shield and unshield work on Solana Mainnet and Devnet. On Mainnet, shielded balances are real funds and every transaction is final. On Devnet, they are test tokens with no real-world value.",
     state: "public",
   },
 ];

@@ -173,6 +173,23 @@ export function setExplorerId(explorerId: ExplorerId) {
   });
 }
 
+export function setPriorityLevel(level: import("@/shared/priority-fee").PriorityLevel) {
+  const requestId = crypto.randomUUID();
+  return sendMessage<{ level: import("@/shared/priority-fee").PriorityLevel }>({
+    type: "SET_PRIORITY_LEVEL",
+    requestId,
+    payload: { level },
+  });
+}
+
+export function getPriorityFees() {
+  const requestId = crypto.randomUUID();
+  return sendMessage<{
+    applies: boolean;
+    quotes: import("@/background/priority-fee").PriorityFeeQuote[];
+  }>({ type: "GET_PRIORITY_FEES", requestId });
+}
+
 export function setUiSurface(surface: "popup" | "sidepanel") {
   const requestId = crypto.randomUUID();
   return sendMessage<{ surface: "popup" | "sidepanel" }>({

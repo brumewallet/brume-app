@@ -1,10 +1,7 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { NextResponse } from "next/server";
+import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
 
-const RPC: Record<string, string> = {
-  devnet: "https://rpc.magicblock.app/devnet",
-  "mainnet-beta": "https://rpc.magicblock.app/mainnet",
-};
 
 export async function GET(
   request: Request,
@@ -12,9 +9,9 @@ export async function GET(
 ) {
   const { address } = await params;
   const { searchParams } = new URL(request.url);
-  const network = searchParams.get("network") ?? "devnet";
+  const network = networkFromParam(searchParams.get("network"));
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
-  const rpcUrl = searchParams.get("rpcUrl") ?? RPC[network] ?? RPC["devnet"];
+  const rpcUrl = searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
 
   if (!address) {
     return NextResponse.json({ error: "address is required" }, { status: 400 });

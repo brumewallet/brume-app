@@ -32,6 +32,8 @@ import {
   tokenProgramPubkey,
   type TokenProgramKind,
 } from "@/shared/spl-token-inline";
+import type { PriorityLevel } from "@/shared/priority-fee";
+import { applyPriorityFee } from "./priority-fee";
 import {
   fetchLoyalVaultBalance,
   fetchLoyalVaultBalances,
@@ -127,6 +129,7 @@ export async function sendSol(params: {
   toAddress: string;
   solAmount: number;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<string> {
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const to = new PublicKey(params.toAddress);
@@ -148,6 +151,7 @@ export async function sendSol(params: {
       lamports: transferBaseUnits,
     }),
   );
+  await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
   tx.sign(params.from);
   const raw = tx.serialize();
   return sendRawTransactionWithDetailedLogs(
@@ -221,6 +225,7 @@ export async function sendSplToken(params: {
   mintAddress: string;
   amountStr: string;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<string> {
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const mint = new PublicKey(params.mintAddress);
@@ -270,6 +275,7 @@ export async function sendSplToken(params: {
     ),
   );
 
+  await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
   tx.sign(params.from);
   const raw = tx.serialize();
   return sendRawTransactionWithDetailedLogs(
@@ -302,6 +308,7 @@ export async function burnSplToken(params: {
   mintAddress: string;
   amountStr: string;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<BurnSplTokenResult> {
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const mint = new PublicKey(params.mintAddress);
@@ -351,6 +358,7 @@ export async function burnSplToken(params: {
     );
   }
 
+  await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
   tx.sign(params.from);
   const raw = tx.serialize();
   const sig = await sendRawTransactionWithDetailedLogs(
@@ -382,6 +390,7 @@ export async function wrapSol(params: {
   from: Keypair;
   amountSol: string;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<{ signature: string }> {
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const owner = params.from.publicKey;
@@ -400,6 +409,7 @@ export async function wrapSol(params: {
   tx.add(createAssociatedTokenAccountIdempotentInstruction(owner, wsolAta, owner, mint, TOKEN_PROGRAM_ID));
   tx.add(SystemProgram.transfer({ fromPubkey: owner, toPubkey: wsolAta, lamports }));
   tx.add(createSyncNativeInstruction(wsolAta));
+  await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
   tx.sign(params.from);
 
   const sig = await sendRawTransactionWithDetailedLogs(
@@ -418,6 +428,7 @@ export async function unwrapSol(params: {
   network: NetworkId;
   from: Keypair;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<{ signature: string }> {
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const owner = params.from.publicKey;
@@ -431,6 +442,7 @@ export async function unwrapSol(params: {
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
   const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
   tx.add(createCloseAccountInstruction(wsolAta, owner, owner, TOKEN_PROGRAM_ID));
+  await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
   tx.sign(params.from);
 
   const sig = await sendRawTransactionWithDetailedLogs(
@@ -527,6 +539,7 @@ export async function shieldSplToken(params: {
   mintAddress: string;
   amountStr: string;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<{ signature: string }> {
   const { signature } = await loyalShield({
     conn: getConnection(params.network, params.rpcUrlOverride),
@@ -534,6 +547,7 @@ export async function shieldSplToken(params: {
     from: params.from,
     mintAddress: params.mintAddress,
     amountStr: params.amountStr,
+    priority: params.priority,
   });
   return { signature };
 }
@@ -544,6 +558,7 @@ export async function unshieldSplToken(params: {
   mintAddress: string;
   amountStr: string;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<{ signature: string }> {
   const { signature } = await loyalVaultTransferOut({
     conn: getConnection(params.network, params.rpcUrlOverride),
@@ -551,6 +566,7 @@ export async function unshieldSplToken(params: {
     from: params.from,
     mintAddress: params.mintAddress,
     amountStr: params.amountStr,
+    priority: params.priority,
   });
   return { signature };
 }
@@ -562,6 +578,7 @@ export async function sendFromShieldedBalance(params: {
   mintAddress: string;
   amountStr: string;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<{ signature: string; route: "private" }> {
   const toTrim = params.toAddress.trim();
   if (!toTrim) throw new Error("Recipient required");
@@ -572,6 +589,7 @@ export async function sendFromShieldedBalance(params: {
     mintAddress: params.mintAddress,
     amountStr: params.amountStr,
     toAddress: toTrim,
+    priority: params.priority,
   });
   return { signature, route: "private" };
 }
@@ -649,6 +667,7 @@ export async function burnMplCoreNft(params: {
   assetAddress: string;
   collectionAddress: string | null;
   rpcUrlOverride?: string | null;
+  priority?: PriorityLevel;
 }): Promise<string> {
   const conn = getConnection(params.network, params.rpcUrlOverride);
   const asset = new PublicKey(params.assetAddress);
@@ -674,6 +693,7 @@ export async function burnMplCoreNft(params: {
 
   const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
   tx.add(new TransactionInstruction({ keys, programId: MPL_CORE_PROGRAM_ID, data }));
+  await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
   tx.sign(params.from);
 
   return sendRawTransactionWithDetailedLogs(

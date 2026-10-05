@@ -15,6 +15,14 @@ import {
   Timer,
   Users,
 } from "lucide-react";
+import { NETWORKS, type NetworkId } from "@/shared/constants";
+import {
+  DEFAULT_PRIORITY_LEVEL,
+  PRIORITY_LEVELS,
+  PRIORITY_LEVEL_LABEL,
+  type PriorityLevel,
+} from "@/shared/priority-fee";
+import type { PriorityFeeQuote } from "@/background/priority-fee";
 import type { ExtensionMessage } from "@/shared/types";
 import { cn } from "@/lib/utils";
 import { applyUiSurfaceClass, readUiSurface, type UiSurface } from "../lib/ui-shell";
@@ -27,6 +35,10 @@ import { CopyIcon, EyeIcon, EyeSlashIcon } from "@/components/Icons";
 const font = "font-sans";
 const secondary = "text-muted-foreground";
 const chevronMuted = "text-muted-foreground/60";
+
+function formatLamportsAsSol(lamports: number): string {
+  return (lamports / 1e9).toFixed(6).replace(/\.?0+$/, "");
+}
 
 function sendBg<T>(message: ExtensionMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -203,6 +215,10 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [showRpc, setShowRpc] = useState(false);
   const [uiSurface, setUiSurfaceState] = useState<UiSurface>("sidepanel");
   const [switchMessage, setSwitchMessage] = useState<string | null>(null);
+  const [networkBusy, setNetworkBusy] = useState(false);
+  const [networkErr, setNetworkErr] = useState<string | null>(null);
+  const [feeQuotes, setFeeQuotes] = useState<PriorityFeeQuote[] | null>(null);
+  const [priorityErr, setPriorityErr] = useState<string | null>(null);
   const [lockTimeout, setLockTimeout] = useState(15);
   const [theme, setTheme] = useState<"system" | "light" | "dark">(
     () => (localStorage.getItem("brume:theme") as "system" | "light" | "dark") ?? "system",
@@ -260,7 +276,60 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
     }
   }, [pkPassword]);
 
+  const isMainnet = state?.network === "mainnet-beta";
+  useEffect(() => {
+    if (!isMainnet) {
+      setFeeQuotes(null);
+      return;
+    }
+    let cancelled = false;
+    void msg
+      .getPriorityFees()
+      .then((r) => {
+        if (!cancelled) setFeeQuotes(r.quotes);
+      })
+      .catch(() => {
+        if (!cancelled) setFeeQuotes(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isMainnet]);
+
   if (!state) return null;
+
+  async function onNetworkChange(next: NetworkId) {
+    if (!state || next === state.network || networkBusy) return;
+    setNetworkBusy(true);
+    setNetworkErr(null);
+    try {
+      await msg.setNetwork(next);
+      await refresh();
+    } catch (e) {
+      setNetworkErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setNetworkBusy(false);
+    }
+  }
+
+  async function onPriorityChange(level: PriorityLevel) {
+    if (!state || level === state.priorityLevel) return;
+    setPriorityErr(null);
+    try {
+      await msg.setPriorityLevel(level);
+      await refresh();
+    } catch (e) {
+      setPriorityErr(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  const priorityLevel = state?.priorityLevel ?? DEFAULT_PRIORITY_LEVEL;
+  const selectedQuote = feeQuotes?.find((q) => q.level === priorityLevel) ?? null;
+  const priorityHint = !isMainnet
+    ? "Priority fees apply to Mainnet transactions only."
+    : selectedQuote
+      ? `About ${formatLamportsAsSol(selectedQuote.typicalTotalLamports)} SOL network fee for a typical transaction. Higher priority confirms faster when the network is busy.`
+      : "Checking current network fees…";
 
   async function saveRpc() {
     setRpcSaveErr(null);
@@ -507,6 +576,46 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
             title="Manage accounts"
             onClick={() => navigate("/accounts")}
           />
+        </Section>
+
+        <Section label="Network">
+          <SegmentedControl
+            options={(Object.keys(NETWORKS) as NetworkId[]).map((id) => ({
+              value: id,
+              label: NETWORKS[id].label,
+            }))}
+            value={state?.network ?? "devnet"}
+            onChange={(v) => void onNetworkChange(v)}
+          />
+          {state?.network === "mainnet-beta" ? (
+            <p className={cn(font, "px-4 pb-2 text-[11px] leading-relaxed text-muted-foreground")}>
+              Mainnet uses real funds. Transactions are final.
+            </p>
+          ) : null}
+          {networkErr ? (
+            <p className="px-4 pb-2 text-[11px] text-destructive" role="alert">
+              {networkErr}
+            </p>
+          ) : null}
+        </Section>
+
+        <Section label="Transaction priority">
+          <SegmentedControl
+            options={PRIORITY_LEVELS.map((level) => ({
+              value: level,
+              label: PRIORITY_LEVEL_LABEL[level],
+            }))}
+            value={priorityLevel}
+            onChange={(v) => void onPriorityChange(v)}
+          />
+          <p className={cn(font, "px-4 pb-2 text-[11px] leading-relaxed text-muted-foreground")}>
+            {priorityHint}
+          </p>
+          {priorityErr ? (
+            <p className="px-4 pb-2 text-[11px] text-destructive" role="alert">
+              {priorityErr}
+            </p>
+          ) : null}
         </Section>
 
         <Section label="RPC">

@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { getNativeSolDisplay, getTokenListEntry } from "@/lib/token-metadata";
 import { formatTokenListAmount, cn } from "@/lib/utils";
-import { SOL_WRAPPED_MINT, isShieldFeatureEnabled } from "@/shared/constants";
+import { SOL_WRAPPED_MINT } from "@/shared/constants";
 import { BrumeIcon } from "../components/BrumeIcon";
 import { PrivateLegAvatarBadge } from "../components/PrivateLegAvatarBadge";
 import { useJupiterPortfolioPrices } from "../context/JupiterPortfolioPrices";
@@ -428,31 +428,6 @@ export function Shield() {
   }
 
   if (!state) return null;
-
-  if (!isShieldFeatureEnabled(state.network)) {
-    return (
-      <motion.div
-        className="flex min-h-0 flex-1 flex-col px-4 pb-24 pt-6"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 200, damping: 22 }}
-      >
-        <h1 className="text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>Shield</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Private balance (shield / unshield) is only supported on Solana Devnet
-          for now. Brume is locked to Devnet during beta.
-        </p>
-        <Button
-          type="button"
-          variant="secondary"
-          className="mt-6 w-full max-w-xs rounded-2xl"
-          onClick={() => navigate("/")}
-        >
-          Back to Home
-        </Button>
-      </motion.div>
-    );
-  }
 
   if (tokens.length === 0) {
     return (

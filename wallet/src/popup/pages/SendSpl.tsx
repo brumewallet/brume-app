@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { getTokenListEntry } from "@/lib/token-metadata";
-import { NETWORKS, isShieldFeatureEnabled } from "@/shared/constants";
+import { NETWORKS } from "@/shared/constants";
 import { messageFromUnknown } from "@/shared/errors";
 import { Blockchain05Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { scheduleWalletStateRefresh } from "../lib/schedule-wallet-state-refresh
 import { cn } from "@/lib/utils";
 import * as msg from "../messaging";
 import { useWalletStore } from "../store";
+import { PRIORITY_LEVEL_LABEL } from "@/shared/priority-fee";
 
 function formatHumanBalance(amountRaw: string, decimals: number): number {
   const raw =
@@ -65,22 +66,7 @@ export function SendSpl() {
   }, [state, mint]);
 
   useEffect(() => {
-    if (
-      state &&
-      fromPrivateBalance &&
-      !isShieldFeatureEnabled(state.network)
-    ) {
-      navigate(sendBackTo, { replace: true });
-    }
-  }, [state, fromPrivateBalance, navigate, sendBackTo]);
-
-  useEffect(() => {
-    if (
-      !fromPrivateBalance ||
-      mint.length < 32 ||
-      !state ||
-      !isShieldFeatureEnabled(state.network)
-    ) {
+    if (!fromPrivateBalance || mint.length < 32 || !state) {
       setShieldInfo(null);
       setShieldLoadError(null);
       return;
@@ -289,7 +275,9 @@ export function SendSpl() {
               )}
               {!state.simpleMode ? (
                 <p className="text-[11px] text-muted-foreground/80">
-                  Network fee paid in SOL (~0.000005 typical).
+                  {state.network === "mainnet-beta"
+                    ? `Network fee paid in SOL, with ${PRIORITY_LEVEL_LABEL[state.priorityLevel]} priority (change in Settings).`
+                    : "Network fee paid in SOL (~0.000005 typical)."}
                 </p>
               ) : null}
               <div className="mt-auto grid grid-cols-2 gap-3 pt-4">

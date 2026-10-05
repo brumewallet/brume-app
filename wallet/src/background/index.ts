@@ -3,11 +3,12 @@ import {
   DEFAULT_NETWORK,
   SOL_WRAPPED_MINT,
   isExplorerId,
-  isShieldFeatureEnabled,
+  isNetworkId,
   normalizeExplorerId,
   type NetworkId,
 } from "@/shared/constants";
 import { base64ToBytes, bytesToBase64 } from "@/shared/crypto";
+import { isPriorityLevel, normalizePriorityLevel } from "@/shared/priority-fee";
 import { WalletErrorCodes, messageFromUnknown, walletError } from "@/shared/errors";
 import {
   decryptSecretKey,
@@ -53,7 +54,9 @@ import {
   signMessageBytes,
   signTransactionBytes,
   unshieldSplToken,
+  getConnection,
 } from "./rpc";
+import { priorityFeesApply, quotePriorityFees } from "./priority-fee";
 import { clearPersisted, loadVault, saveVault } from "./storage";
 import {
   isPortfolioCacheFresh,
@@ -230,17 +233,10 @@ function getActiveAccountEntry(vault: PersistedVault): WalletAccount {
   return acc;
 }
 
-async function ensureDevnetVault(v: PersistedVault): Promise<PersistedVault> {
-  if (v.network === "devnet") return v;
-  v.network = "devnet";
-  await saveVault(v);
-  return v;
-}
-
 async function getVaultOrThrow(): Promise<PersistedVault> {
   const v = await loadVault();
   if (!v?.accounts?.length) throw new Error("No wallet found");
-  return ensureDevnetVault(v);
+  return v;
 }
 
 async function fetchAndCacheSolBalance(): Promise<void> {
@@ -346,7 +342,6 @@ async function patchPortfolioTokenAmountFromRpcForMint(params: {
   mint: string;
   rpcUrlOverride: string | null;
 }): Promise<void> {
-  if (params.network !== "devnet") return;
   try {
     const raw = await fetchSplAtaBalanceRawForOwner(
       {
@@ -441,30 +436,26 @@ async function refreshWalletData(opts?: {
     }
   }
 
-  if (!isShieldFeatureEnabled(network)) {
-    cachedShieldedBalances = {};
+  const shieldEntry = await readShieldBalancesCacheEntry(network, addr);
+  const shieldFresh =
+    !forcePortfolio &&
+    shieldEntry != null &&
+    isShieldBalancesCacheFresh(shieldEntry.cachedAt);
+  const tokenList = cachedPortfolioTokens ?? [];
+  const mintsForShield = [
+    ...new Set([...tokenList.map((t) => t.mint), SOL_WRAPPED_MINT]),
+  ];
+  if (shieldFresh) {
+    cachedShieldedBalances = shieldEntry.balances;
   } else {
-    const shieldEntry = await readShieldBalancesCacheEntry(network, addr);
-    const shieldFresh =
-      !forcePortfolio &&
-      shieldEntry != null &&
-      isShieldBalancesCacheFresh(shieldEntry.cachedAt);
-    const tokenList = cachedPortfolioTokens ?? [];
-    const mintsForShield = [
-      ...new Set([...tokenList.map((t) => t.mint), SOL_WRAPPED_MINT]),
-    ];
-    if (shieldFresh) {
-      cachedShieldedBalances = shieldEntry.balances;
-    } else {
-      const map = await fetchShieldBalancesMapForMints({
-        network,
-        owner: addr,
-        mints: mintsForShield,
-        rpcUrlOverride,
-      });
-      await writeShieldBalancesCache(network, addr, map);
-      cachedShieldedBalances = map;
-    }
+    const map = await fetchShieldBalancesMapForMints({
+      network,
+      owner: addr,
+      mints: mintsForShield,
+      rpcUrlOverride,
+    });
+    await writeShieldBalancesCache(network, addr, map);
+    cachedShieldedBalances = map;
   }
 }
 
@@ -485,9 +476,7 @@ async function hydrateWalletCachesFromStorage(
     portfolioEntry != null && portfolioEntry.tokens.length > 0
       ? portfolioEntry.tokens
       : null;
-  cachedShieldedBalances = isShieldFeatureEnabled(network)
-    ? (shieldEntry?.balances ?? null)
-    : {};
+  cachedShieldedBalances = shieldEntry?.balances ?? null;
 }
 
 function scheduleWalletDataRefresh(): void {
@@ -497,10 +486,7 @@ function scheduleWalletDataRefresh(): void {
 }
 
 async function buildUiState(): Promise<import("@/shared/types").WalletUiState> {
-  let p = await loadVault();
-  if (p?.accounts?.length && p.network !== "devnet") {
-    p = await ensureDevnetVault(p);
-  }
+  const p = await loadVault();
   const hasVault = !!p?.accounts?.length;
   const locked = !sessionKeypair;
   const activeId = p?.activeAccountId ?? null;
@@ -530,7 +516,7 @@ async function buildUiState(): Promise<import("@/shared/types").WalletUiState> {
   }
 
   let shieldedBalancesByMint: Record<string, string> = {};
-  if (!locked && publicKey && isShieldFeatureEnabled(network)) {
+  if (!locked && publicKey) {
     shieldedBalancesByMint = cachedShieldedBalances ?? {};
     if (Object.keys(shieldedBalancesByMint).length === 0) {
       const ent = await readShieldBalancesCacheEntry(network, publicKey);
@@ -554,6 +540,7 @@ async function buildUiState(): Promise<import("@/shared/types").WalletUiState> {
     indexerError: lastIndexerError,
     rpcUrlOverride: p?.rpcUrlOverride?.trim() || null,
     explorerId: normalizeExplorerId(p?.explorerId),
+    priorityLevel: normalizePriorityLevel(p?.priorityLevel),
     portfolioTokens: portfolio,
     shieldedBalancesByMint,
     simpleMode: p?.simpleMode ?? true,
@@ -1023,8 +1010,15 @@ async function handleMessage(
 
       case "SET_NETWORK": {
         const p = await getVaultOrThrow();
-        // Brume beta is Devnet-only (Shield, disclosure). Ignore mainnet switches from older UIs.
-        p.network = "devnet";
+        const next = raw.payload.network;
+        if (!isNetworkId(next)) {
+          sendResponse({
+            ok: false,
+            error: walletError(4002, "Unknown network"),
+          });
+          return;
+        }
+        p.network = next;
         await saveVault(p);
         // so the popup can show the right cached balances/portfolio instantly.
         if (sessionKeypair) {
@@ -1038,7 +1032,7 @@ async function handleMessage(
           }
         }
 
-        sendResponse({ ok: true, payload: { network: "devnet" as const } });
+        sendResponse({ ok: true, payload: { network: p.network } });
         void refreshWalletData({ forcePortfolio: true });
         return;
       }
@@ -1074,6 +1068,42 @@ async function handleMessage(
         p.explorerId = id;
         await saveVault(p);
         sendResponse({ ok: true, payload: { explorerId: id } });
+        return;
+      }
+
+      case "SET_PRIORITY_LEVEL": {
+        const p = await getVaultOrThrow();
+        const level = raw.payload.level;
+        if (!isPriorityLevel(level)) {
+          sendResponse({
+            ok: false,
+            error: walletError(4002, "Invalid priority level"),
+          });
+          return;
+        }
+        p.priorityLevel = level;
+        await saveVault(p);
+        sendResponse({ ok: true, payload: { level } });
+        return;
+      }
+
+      case "GET_PRIORITY_FEES": {
+        const p = await getVaultOrThrow();
+        if (!priorityFeesApply(p.network)) {
+          sendResponse({ ok: true, payload: { applies: false, quotes: [] } });
+          return;
+        }
+        try {
+          const quotes = await quotePriorityFees(
+            getConnection(p.network, p.rpcUrlOverride ?? null),
+          );
+          sendResponse({ ok: true, payload: { applies: true, quotes } });
+        } catch (e) {
+          sendResponse({
+            ok: false,
+            error: walletError(4002, messageFromUnknown(e)),
+          });
+        }
         return;
       }
 
@@ -1121,6 +1151,7 @@ async function handleMessage(
           toAddress: raw.payload.to.trim(),
           solAmount: sol,
           rpcUrlOverride: p.rpcUrlOverride ?? null,
+          priority: normalizePriorityLevel(p.priorityLevel),
         });
         await refreshWalletData({ forcePortfolio: true });
         sendResponse({
@@ -1150,16 +1181,6 @@ async function handleMessage(
           });
           return;
         }
-        if (fromPrivateBalance && !isShieldFeatureEnabled(p.network)) {
-          sendResponse({
-            ok: false,
-            error: walletError(
-              4002,
-              "Shielded sends are only available on Devnet",
-            ),
-          });
-          return;
-        }
         try {
           const sendParams = {
             network: p.network,
@@ -1168,6 +1189,7 @@ async function handleMessage(
             mintAddress: mint,
             amountStr: amount,
             rpcUrlOverride: p.rpcUrlOverride ?? null,
+            priority: normalizePriorityLevel(p.priorityLevel),
           };
           const { signature, route } = fromPrivateBalance
             ? await sendFromShieldedBalance(sendParams)
@@ -1215,6 +1237,7 @@ async function handleMessage(
             mintAddress: mint,
             amountStr: amount,
             rpcUrlOverride: p.rpcUrlOverride ?? null,
+            priority: normalizePriorityLevel(p.priorityLevel),
           });
           await applyBurnToPortfolioCache({
             network: p.network,
@@ -1252,6 +1275,7 @@ async function handleMessage(
             from: sessionKeypair,
             amountSol,
             rpcUrlOverride: p.rpcUrlOverride ?? null,
+            priority: normalizePriorityLevel(p.priorityLevel),
           });
           await fetchAndCacheSolBalance();
           cachedPortfolioTokens = null;
@@ -1276,6 +1300,7 @@ async function handleMessage(
             network: p.network,
             from: sessionKeypair,
             rpcUrlOverride: p.rpcUrlOverride ?? null,
+            priority: normalizePriorityLevel(p.priorityLevel),
           });
           await applyBurnToPortfolioCache({
             network: p.network,
@@ -1347,6 +1372,7 @@ async function handleMessage(
               assetAddress: mint,
               collectionAddress: collection ?? null,
               rpcUrlOverride: p.rpcUrlOverride ?? null,
+              priority: normalizePriorityLevel(p.priorityLevel),
             });
           } else if (standard === "legacy") {
             const result = await burnSplToken({
@@ -1355,6 +1381,7 @@ async function handleMessage(
               mintAddress: mint,
               amountStr: "all",
               rpcUrlOverride: p.rpcUrlOverride ?? null,
+              priority: normalizePriorityLevel(p.priorityLevel),
             });
             sig = result.signature;
           } else {
@@ -1381,16 +1408,6 @@ async function handleMessage(
           return;
         }
         const p = await getVaultOrThrow();
-        if (!isShieldFeatureEnabled(p.network)) {
-          sendResponse({
-            ok: false,
-            error: walletError(
-              4002,
-              "Shield is only available on Devnet",
-            ),
-          });
-          return;
-        }
         const mint = raw.payload.mint?.trim();
         if (!mint) {
           sendResponse({
@@ -1426,10 +1443,6 @@ async function handleMessage(
           return;
         }
         const p = await getVaultOrThrow();
-        if (!isShieldFeatureEnabled(p.network)) {
-          sendResponse({ ok: true, payload: {} });
-          return;
-        }
         const rawMints = raw.payload.mints;
         const mints = Array.isArray(rawMints)
           ? [...new Set(rawMints.map((m) => String(m).trim()).filter((m) => m.length >= 32))].slice(
@@ -1470,16 +1483,6 @@ async function handleMessage(
           return;
         }
         const p = await getVaultOrThrow();
-        if (!isShieldFeatureEnabled(p.network)) {
-          sendResponse({
-            ok: false,
-            error: walletError(
-              4002,
-              "Shield is only available on Devnet",
-            ),
-          });
-          return;
-        }
         const mint = raw.payload.mint?.trim();
         const amount = raw.payload.amount?.trim();
         const mode = raw.payload.mode;
@@ -1499,6 +1502,7 @@ async function handleMessage(
                   mintAddress: mint,
                   amountStr: amount,
                   rpcUrlOverride: p.rpcUrlOverride ?? null,
+                  priority: normalizePriorityLevel(p.priorityLevel),
                 })
               : await unshieldSplToken({
                   network: p.network,
@@ -1506,6 +1510,7 @@ async function handleMessage(
                   mintAddress: mint,
                   amountStr: amount,
                   rpcUrlOverride: p.rpcUrlOverride ?? null,
+                  priority: normalizePriorityLevel(p.priorityLevel),
                 });
           await refreshWalletData({ forcePortfolio: true });
           const addr = sessionKeypair.publicKey.toBase58();

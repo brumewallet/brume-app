@@ -31,7 +31,6 @@
     "https://api.devnet.solana.com/*",
     "https://api.mainnet-beta.solana.com/*",
     "https://rpc.magicblock.app/*",
-    "https://payments.magicblock.app/*",
     "https://brume.cash/*",
     "https://*.magicblock.app/*",
     "http://localhost/*",

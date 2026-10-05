@@ -20,6 +20,7 @@ import { scheduleWalletStateRefresh } from "../lib/schedule-wallet-state-refresh
 import { cn } from "@/lib/utils";
 import * as msg from "../messaging";
 import { useWalletStore } from "../store";
+import { PRIORITY_LEVEL_LABEL } from "@/shared/priority-fee";
 
 type Phase = "form" | "sending" | "error";
 
@@ -160,7 +161,9 @@ export function SendSol() {
             </div>
             {!state.simpleMode && (
               <p className="text-[11px] text-muted-foreground/80">
-                Network fee paid in SOL (~0.000005 typical).
+                {state.network === "mainnet-beta"
+                  ? `Network fee paid in SOL, with ${PRIORITY_LEVEL_LABEL[state.priorityLevel]} priority (change in Settings).`
+                  : "Network fee paid in SOL (~0.000005 typical)."}
               </p>
             )}
             <div className="mt-auto grid grid-cols-2 gap-3 pt-4">

@@ -13,7 +13,7 @@ import {
 } from "../lib/private-balance-helpers";
 import { sortPortfolioTokensByBalanceDesc } from "../lib/sort-portfolio-by-balance";
 import * as msg from "../messaging";
-import { SOL_WRAPPED_MINT, isShieldFeatureEnabled } from "@/shared/constants";
+import { SOL_WRAPPED_MINT } from "@/shared/constants";
 import { useWalletStore } from "../store";
 import { SearchIcon } from "@/components/Icons";
 
@@ -52,13 +52,7 @@ export function Send() {
     [sortedSpl],
   );
 
-  const shieldEnabled = isShieldFeatureEnabled(state?.network ?? "devnet");
-
   const loadPrivateBalances = useCallback(async () => {
-    if (!shieldEnabled) {
-      setBatchShieldByMint({});
-      return;
-    }
     const mints = [...new Set([...sortedSpl.map((t) => t.mint), SOL_WRAPPED_MINT])];
     try {
       const map = await msg.getShieldBalancesBatch(mints);
@@ -66,7 +60,7 @@ export function Send() {
     } catch {
       setBatchShieldByMint(null);
     }
-  }, [sortedSpl, shieldEnabled]);
+  }, [sortedSpl]);
 
   useEffect(() => {
     void loadPrivateBalances();
@@ -76,9 +70,7 @@ export function Send() {
     setBatchShieldByMint(null);
   }, [state?.publicKey, state?.network, splMintKey]);
 
-  const privateByMint = shieldEnabled
-    ? (batchShieldByMint ?? state?.shieldedBalancesByMint ?? {})
-    : {};
+  const privateByMint = batchShieldByMint ?? state?.shieldedBalancesByMint ?? {};
 
   const filteredSpl = useMemo(() => {
     const list = state?.portfolioTokens ?? [];

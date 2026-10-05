@@ -1,10 +1,7 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { NextResponse } from "next/server";
+import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
 
-const RPC: Record<string, string> = {
-  devnet: "https://rpc.magicblock.app/devnet",
-  "mainnet-beta": "https://rpc.magicblock.app/mainnet",
-};
 
 const TOKEN_METADATA_PROGRAM_ID = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
 
@@ -33,8 +30,8 @@ export async function GET(
 ) {
   const { mint } = await params;
   const { searchParams } = new URL(request.url);
-  const network = searchParams.get("network") ?? "devnet";
-  const rpcUrl = searchParams.get("rpcUrl") ?? RPC[network] ?? RPC["devnet"];
+  const network = networkFromParam(searchParams.get("network"));
+  const rpcUrl = searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
 
   if (!mint) {
     return NextResponse.json({ error: "mint is required" }, { status: 400 });
