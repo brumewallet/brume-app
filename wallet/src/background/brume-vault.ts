@@ -27,6 +27,7 @@ import {
   tokenProgramPubkey,
 } from "@/shared/spl-token-inline";
 import { applyPriorityFee } from "./priority-fee";
+import { assertEnoughSol } from "./sol-check";
 
 export const SHIELD_VAULT_INDEX = 0;
 
@@ -182,6 +183,7 @@ async function sendAndConfirm(
     ...ixs,
   );
   await applyPriorityFee({ conn, network, tx, level: priority });
+  await assertEnoughSol(conn, signer.publicKey, tx);
   tx.sign(signer);
   const sig = await conn.sendRawTransaction(tx.serialize(), {
     skipPreflight: false,

@@ -70,6 +70,31 @@ export function serializeUnknownForLog(value: unknown): unknown {
   }
 }
 
+export function lamportsToSol(lamports: bigint): string {
+  const whole = lamports / 1_000_000_000n;
+  const frac = (lamports % 1_000_000_000n).toString().padStart(9, "0").replace(/0+$/, "");
+  return frac ? `${whole}.${frac}` : whole.toString();
+}
+
+// Lamports held and needed at the step where a System Program transfer ran out of SOL.
+export function parseInsufficientLamports(text: string): { have: bigint; need: bigint } | null {
+  const m = text.match(/insufficient lamports (\d+), need (\d+)/);
+  return m ? { have: BigInt(m[1]), need: BigInt(m[2]) } : null;
+}
+
+// Readable text for a System Program "insufficient lamports" failure found in a message or its logs.
+export function insufficientSolMessage(text: string): string | null {
+  const parsed = parseInsufficientLamports(text);
+  if (!parsed) return null;
+  const { have, need } = parsed;
+  const short = need > have ? need - have : 0n;
+  return (
+    `Not enough SOL. This step needs ${lamportsToSol(need)} SOL, but only ${lamportsToSol(have)} SOL ` +
+    `is left after network fees and account setup. Add at least ${lamportsToSol(short)} SOL ` +
+    `or use a smaller amount.`
+  );
+}
+
 function errorHasGetLogs(e: unknown): e is SendTransactionError {
   return (
     e instanceof Error &&
@@ -88,6 +113,8 @@ export function messageFromUnknown(e: unknown): string {
   if (e instanceof Error) {
     const ex = e as ErrorWithSolanaMeta;
     const rawMsg = ex.message;
+    const noSol = insufficientSolMessage(`${rawMsg}\n${(ex.transactionLogs ?? []).join("\n")}`);
+    if (noSol) return noSol;
     if (ex.name === "SendTransactionError" && typeof rawMsg === "string" && rawMsg.length > 0) {
       return rawMsg;
     }
@@ -165,6 +192,8 @@ export async function detailedTransactionFailureMessage(
 ): Promise<string> {
   if (errorHasGetLogs(e)) {
     const ste = e;
+    const noSol = insufficientSolMessage(`${ste.message}\n${(ste.logs ?? []).join("\n")}`);
+    if (noSol) return noSol;
     let lines: string[] = [];
     if (rpcConnection) {
       try {

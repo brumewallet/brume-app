@@ -6,11 +6,17 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  TransactionExpiredBlockheightExceededError,
   TransactionInstruction,
   VersionedTransaction,
+  type Commitment,
+  type RpcResponseAndContext,
+  type SignatureResult,
+  type TransactionConfirmationStrategy,
 } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import {
+  DEFAULT_BRUME_API_ORIGIN,
   NETWORKS,
   SOL_BASE_UNITS_PER_SOL,
   SOL_WRAPPED_MINT,
@@ -34,6 +40,7 @@ import {
 } from "@/shared/spl-token-inline";
 import type { PriorityLevel } from "@/shared/priority-fee";
 import { applyPriorityFee } from "./priority-fee";
+import { assertEnoughSol } from "./sol-check";
 import {
   fetchShieldVaultBalance,
   fetchShieldVaultBalances,
@@ -80,7 +87,46 @@ export function resolveRpcUrl(
 ): string {
   const trimmed = rpcUrlOverride?.trim();
   if (trimmed) return trimmed;
+  // Public mainnet RPC answers 403 to extension origins, so mainnet goes through the Brume API proxy.
+  if (network === "mainnet-beta") return brumeRpcProxyUrl(network);
   return NETWORKS[network].rpc;
+}
+
+function brumeRpcProxyUrl(network: NetworkId): string {
+  return `${DEFAULT_BRUME_API_ORIGIN.replace(/\/$/, "")}/api/rpc?network=${network}`;
+}
+
+const COMMITMENT_RANK: Record<string, number> = { processed: 0, confirmed: 1, finalized: 2 };
+
+// Confirms by polling signature status over HTTP; the proxy has no websocket for signature subscriptions.
+class HttpConfirmConnection extends Connection {
+  override async confirmTransaction(
+    strategy: TransactionConfirmationStrategy | string,
+    commitment?: Commitment,
+  ): Promise<RpcResponseAndContext<SignatureResult>> {
+    if (typeof strategy === "string" || !("lastValidBlockHeight" in strategy)) {
+      return super.confirmTransaction(strategy as TransactionConfirmationStrategy, commitment);
+    }
+    const { signature, lastValidBlockHeight, abortSignal } = strategy;
+    const want = commitment ?? this.commitment ?? "finalized";
+    const wantRank = COMMITMENT_RANK[want] ?? 1;
+    for (;;) {
+      abortSignal?.throwIfAborted();
+      const { context, value } = await this.getSignatureStatuses([signature]);
+      const status = value[0];
+      if (status?.err) return { context, value: { err: status.err } };
+      if (status?.confirmationStatus && COMMITMENT_RANK[status.confirmationStatus] >= wantRank) {
+        return { context, value: { err: null } };
+      }
+      if ((await this.getBlockHeight("confirmed")) > lastValidBlockHeight) {
+        const last = (await this.getSignatureStatuses([signature], { searchTransactionHistory: true })).value[0];
+        if (last?.err) return { context, value: { err: last.err } };
+        if (last?.confirmationStatus) return { context, value: { err: null } };
+        throw new TransactionExpiredBlockheightExceededError(signature);
+      }
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
 }
 
 export function getConnection(
@@ -88,6 +134,7 @@ export function getConnection(
   rpcUrlOverride?: string | null,
 ): Connection {
   const url = resolveRpcUrl(network, rpcUrlOverride);
+  if (url === brumeRpcProxyUrl(network)) return new HttpConfirmConnection(url, { commitment: "confirmed" });
   return new Connection(url, { commitment: "confirmed" });
 }
 
@@ -152,6 +199,7 @@ export async function sendSol(params: {
     }),
   );
   await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
+  await assertEnoughSol(conn, params.from.publicKey, tx);
   tx.sign(params.from);
   const raw = tx.serialize();
   return sendRawTransactionWithDetailedLogs(
@@ -276,6 +324,7 @@ export async function sendSplToken(params: {
   );
 
   await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
+  await assertEnoughSol(conn, owner, tx);
   tx.sign(params.from);
   const raw = tx.serialize();
   return sendRawTransactionWithDetailedLogs(
@@ -359,6 +408,7 @@ export async function burnSplToken(params: {
   }
 
   await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
+  await assertEnoughSol(conn, owner, tx);
   tx.sign(params.from);
   const raw = tx.serialize();
   const sig = await sendRawTransactionWithDetailedLogs(
@@ -400,9 +450,6 @@ export async function wrapSol(params: {
   const lamports = BigInt(Math.round(parseFloat(params.amountSol) * 1e9));
   if (lamports <= 0n) throw new Error("Amount must be positive");
 
-  const nativeBal = await conn.getBalance(owner);
-  if (BigInt(nativeBal) < lamports + 5000n) throw new Error("Insufficient SOL (need amount + fees)");
-
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
   const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
 
@@ -410,6 +457,7 @@ export async function wrapSol(params: {
   tx.add(SystemProgram.transfer({ fromPubkey: owner, toPubkey: wsolAta, lamports }));
   tx.add(createSyncNativeInstruction(wsolAta));
   await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
+  await assertEnoughSol(conn, owner, tx);
   tx.sign(params.from);
 
   const sig = await sendRawTransactionWithDetailedLogs(
@@ -443,6 +491,7 @@ export async function unwrapSol(params: {
   const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
   tx.add(createCloseAccountInstruction(wsolAta, owner, owner, TOKEN_PROGRAM_ID));
   await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
+  await assertEnoughSol(conn, owner, tx);
   tx.sign(params.from);
 
   const sig = await sendRawTransactionWithDetailedLogs(
@@ -694,6 +743,7 @@ export async function burnMplCoreNft(params: {
   const tx = new Transaction({ feePayer: owner, recentBlockhash: blockhash });
   tx.add(new TransactionInstruction({ keys, programId: MPL_CORE_PROGRAM_ID, data }));
   await applyPriorityFee({ conn, network: params.network, tx, level: params.priority });
+  await assertEnoughSol(conn, owner, tx);
   tx.sign(params.from);
 
   return sendRawTransactionWithDetailedLogs(

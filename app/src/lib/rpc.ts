@@ -14,3 +14,12 @@ export function networkFromParam(value: string | null): NetworkId {
 export function defaultRpcUrl(network: NetworkId): string {
   return ENV_RPC[network]?.trim() || NETWORKS[network].rpc;
 }
+
+// Upstream for the extension's /api/rpc proxy: env override, else Helius on mainnet when a key is set, else the shared default.
+export function proxyRpcUrl(network: NetworkId): string {
+  const env = ENV_RPC[network]?.trim();
+  if (env) return env;
+  const helius = process.env.HELIUS_API_KEY?.trim();
+  if (helius && network === "mainnet-beta") return `https://mainnet.helius-rpc.com/?api-key=${helius}`;
+  return NETWORKS[network].rpc;
+}

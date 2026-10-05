@@ -15,6 +15,7 @@ import type { NetworkId } from "@/shared/constants";
 import { detailedTransactionFailureMessage, serializeUnknownForLog } from "@/shared/errors";
 import { MAX_COMPUTE_UNITS, type PriorityLevel } from "@/shared/priority-fee";
 import { computeBudgetInstructions, priorityFeesApply } from "./priority-fee";
+import { assertEnoughSol } from "./sol-check";
 import { isV1Unsupported, sendV1 } from "./tx-v1";
 
 const PACKET_LIMIT = 1232;
@@ -193,6 +194,7 @@ export async function sendV0(params: {
 const v0OnlyEndpoints = new Set<string>();
 
 // Sends as version 1; falls back to version 0 (with a Brume lookup table when needed) if the RPC cannot take v1.
+// `payerName` names signers[0] in the not-enough-SOL message.
 export async function sendVersioned(params: {
   conn: Connection;
   network: NetworkId;
@@ -201,8 +203,14 @@ export async function sendVersioned(params: {
   lookupTables?: readonly AddressLookupTableAccount[];
   priority?: PriorityLevel;
   label: string;
+  payerName?: string;
 }): Promise<string> {
   const { conn, network, label } = params;
+  const payer = params.signers[0];
+  if (!payer) throw new Error("A fee payer is required");
+  // Probe without budget instructions, so the priority fee is not in this estimate.
+  const probe = new VersionedTransaction(compile(payer.publicKey, params.ixs, params.lookupTables ?? []));
+  await assertEnoughSol(conn, payer.publicKey, probe, params.payerName);
   if (!v0OnlyEndpoints.has(conn.rpcEndpoint)) {
     try {
       return await sendV1(params);
@@ -226,6 +234,7 @@ export async function sendPreparedInOrder(params: {
   signers: readonly Keypair[];
   operations: readonly (PreparedOperationLike | null | undefined)[];
   priority?: PriorityLevel;
+  payerName?: string;
 }): Promise<string[]> {
   const signatures: string[] = [];
   for (const op of params.operations) {
@@ -239,6 +248,7 @@ export async function sendPreparedInOrder(params: {
         lookupTables: op.lookupTableAccounts,
         priority: params.priority,
         label: op.operation,
+        payerName: params.payerName,
       }),
     );
   }

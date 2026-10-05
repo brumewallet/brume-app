@@ -35,6 +35,8 @@ export const MIN_SWEEP_RAW = 1_000_000n;
 // SOL float kept on the automation key for sweep fees.
 const AUTOMATION_TARGET_LAMPORTS = BigInt(LAMPORTS_PER_SOL / 100);
 const AUTOMATION_MIN_LAMPORTS = BigInt(LAMPORTS_PER_SOL / 400);
+// Payer name in the not-enough-SOL message for sends the automation key pays for.
+const AUTOMATION_PAYER = "The Earn automation key";
 // Earn policy constraint indexes: 0 = Kamino withdraw, 1 = Kamino deposit.
 const EARN_DEPOSIT_CONSTRAINT = 1;
 // Recurring delegation layout (verified on the mainnet fork): period start, period length, expiry, per period, pulled.
@@ -363,6 +365,7 @@ async function supplyIdleUsdc(params: {
     lookupTables: bundle.lookupTables,
     priority: params.priority,
     label: "auto-earn supply",
+    payerName: AUTOMATION_PAYER,
   });
 }
 
@@ -404,7 +407,7 @@ export async function runAutoEarnSweep(params: {
         cluster: cluster(network),
       });
       result.signatures.push(
-        ...(await sendPreparedInOrder({ conn, network, signers: [automation], operations: [prepared.prepared], priority: params.priority })),
+        ...(await sendPreparedInOrder({ conn, network, signers: [automation], operations: [prepared.prepared], priority: params.priority, payerName: AUTOMATION_PAYER })),
       );
       result.pulledRaw = pull.toString();
       rec.principalRaw = (BigInt(rec.principalRaw ?? "0") + pull).toString();
