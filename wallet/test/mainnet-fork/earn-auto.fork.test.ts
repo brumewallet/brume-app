@@ -13,6 +13,7 @@ import { disableAutoEarn, enableAutoEarn, remainingAllowance, runAutoEarnSweep }
 import { resolveBrumeSettings } from "@/background/brume-vault";
 import { sendV0 } from "@/background/tx-send";
 import { installKaminoApiShim } from "./kamino-shim";
+import { EXPECTED_TX_VERSION, landedTx } from "./landed-tx";
 
 const storage: Record<string, unknown> = {};
 (globalThis as unknown as { chrome: unknown }).chrome = {
@@ -43,9 +44,15 @@ async function position() {
   return fetchEarnPosition({ conn, network: NETWORK, owner: owner.publicKey });
 }
 
-async function feePayerOf(signature: string): Promise<string> {
-  const tx = await conn.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
-  return tx!.transaction.message.staticAccountKeys[0].toBase58();
+// Every auto-earn transaction must be version 1 with a sufficient compute limit and a priority fee (the fork runs as mainnet).
+async function expectV1(signature: string, feePayer: string) {
+  const tx = await landedTx(conn, signature);
+  expect(tx.version).toBe(EXPECTED_TX_VERSION);
+  expect(tx.feePayer).toBe(feePayer);
+  if (EXPECTED_TX_VERSION !== 1) return;
+  expect(tx.computeUnitLimit! >= tx.unitsConsumed).toBe(true);
+  expect(tx.loadedAccountsDataSizeLimit! > 0).toBe(true);
+  expect(tx.priorityFeeLamports! > 0n).toBe(true);
 }
 
 describe("Brume auto-earn on a mainnet-beta fork", () => {
@@ -87,7 +94,7 @@ describe("Brume auto-earn on a mainnet-beta fork", () => {
     // The sweep supplies all idle USDC, including rounding dust left by the first deposit.
     expect(BigInt(res.suppliedRaw) >= usdc(300) && BigInt(res.suppliedRaw) <= usdc(300) + SUPPLY_TOLERANCE).toBe(true);
     const automation = automationKeypair((await readEarnRecord(NETWORK, owner.publicKey))!).publicKey.toBase58();
-    for (const sig of res.signatures) expect(await feePayerOf(sig)).toBe(automation);
+    for (const sig of res.signatures) await expectV1(sig, automation);
 
     const after = await position();
     expect(BigInt(after.walletUsdcRaw)).toBe(usdc(690));

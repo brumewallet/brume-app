@@ -24,6 +24,9 @@ export const MAX_PRICE_MICRO_LAMPORTS = 2_000_000;
 
 export const MAX_COMPUTE_UNITS = 1_400_000;
 
+// v1 transactions must request a loaded-accounts data budget; 64 MiB is the protocol maximum.
+export const MAX_LOADED_ACCOUNTS_DATA_SIZE = 64 * 1024 * 1024;
+
 // Limit used when simulation cannot measure the transaction.
 export const FALLBACK_UNITS_PER_INSTRUCTION = 200_000;
 
@@ -72,4 +75,10 @@ export function computeUnitLimitFor(
 // Lamports a transaction pays for priority: ceil(price * limit / 1e6).
 export function priorityFeeLamports(microLamportsPerCu: number, computeUnitLimit: number): number {
   return Math.ceil((microLamportsPerCu * computeUnitLimit) / 1_000_000);
+}
+
+// Loaded-accounts data limit from simulated use: +20% and +16 KiB headroom, capped; the maximum when unmeasured.
+export function loadedDataLimitFor(measuredBytes: number | null | undefined): number {
+  if (measuredBytes == null || !Number.isFinite(measuredBytes) || measuredBytes <= 0) return MAX_LOADED_ACCOUNTS_DATA_SIZE;
+  return Math.min(Math.ceil(measuredBytes * 1.2) + 16 * 1024, MAX_LOADED_ACCOUNTS_DATA_SIZE);
 }

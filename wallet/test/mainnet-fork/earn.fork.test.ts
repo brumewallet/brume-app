@@ -9,6 +9,7 @@ import { policies } from "@loyal-labs/loyal-smart-accounts";
 import { beforeAll, describe, expect, inject, it } from "vitest";
 import { automationKeypair, earnDeposit, fetchEarnPosition, readEarnRecord } from "@/background/earn";
 import { installKaminoApiShim } from "./kamino-shim";
+import { EXPECTED_TX_VERSION, landedTx } from "./landed-tx";
 
 const storage: Record<string, unknown> = {};
 (globalThis as unknown as { chrome: unknown }).chrome = {
@@ -48,6 +49,13 @@ describe("Brume Earn on a mainnet-beta fork", () => {
   it("first deposit creates the Smart Account, the Kamino obligation and the Earn policy", async () => {
     const { signatures } = await earnDeposit({ conn, network: NETWORK, from: owner, amountRaw: usdc(250) });
     expect(signatures.length).toBeGreaterThanOrEqual(1);
+    for (const sig of signatures) {
+      const tx = await landedTx(conn, sig);
+      expect(tx.version).toBe(EXPECTED_TX_VERSION);
+      if (EXPECTED_TX_VERSION !== 1) continue;
+      expect(tx.computeUnitLimit! >= tx.unitsConsumed).toBe(true);
+      expect(tx.priorityFeeLamports! > 0n).toBe(true);
+    }
 
     const pos = await fetchEarnPosition({ conn, network: NETWORK, owner: owner.publicKey });
     expect(BigInt(pos.walletUsdcRaw)).toBe(usdc(750));

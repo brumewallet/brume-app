@@ -1,4 +1,4 @@
-// v0 transaction sender with lookup tables and mainnet priority fees (used by Earn).
+// Wallet transaction sender: version 1 first, version 0 with lookup tables when an RPC cannot take v1.
 import {
   AddressLookupTableProgram,
   ComputeBudgetProgram,
@@ -15,6 +15,7 @@ import type { NetworkId } from "@/shared/constants";
 import { detailedTransactionFailureMessage, serializeUnknownForLog } from "@/shared/errors";
 import { MAX_COMPUTE_UNITS, type PriorityLevel } from "@/shared/priority-fee";
 import { computeBudgetInstructions, priorityFeesApply } from "./priority-fee";
+import { isV1Unsupported, sendV1 } from "./tx-v1";
 
 const PACKET_LIMIT = 1232;
 const LOOKUP_STORAGE_KEY = "brume_lookup_v1";
@@ -188,6 +189,36 @@ export async function sendV0(params: {
   }
 }
 
+// RPC endpoints that rejected a v1 transaction; they get v0 for the rest of the session.
+const v0OnlyEndpoints = new Set<string>();
+
+// Sends as version 1; falls back to version 0 (with a Brume lookup table when needed) if the RPC cannot take v1.
+export async function sendVersioned(params: {
+  conn: Connection;
+  network: NetworkId;
+  signers: readonly Keypair[];
+  ixs: readonly TransactionInstruction[];
+  lookupTables?: readonly AddressLookupTableAccount[];
+  priority?: PriorityLevel;
+  label: string;
+}): Promise<string> {
+  const { conn, network, label } = params;
+  if (!v0OnlyEndpoints.has(conn.rpcEndpoint)) {
+    try {
+      return await sendV1(params);
+    } catch (e) {
+      if (!isV1Unsupported(e)) {
+        const message = await detailedTransactionFailureMessage(e, conn);
+        console.error(`[Brume] ${label} failed (v1)\n${JSON.stringify({ network, error: serializeUnknownForLog(e), message }, null, 2)}`);
+        throw new Error(message);
+      }
+      v0OnlyEndpoints.add(conn.rpcEndpoint);
+      console.warn(`[Brume] ${conn.rpcEndpoint} does not accept v1 transactions; using v0`);
+    }
+  }
+  return sendV0(params);
+}
+
 // Sends prepared SDK operations one after another, in the given order.
 export async function sendPreparedInOrder(params: {
   conn: Connection;
@@ -200,7 +231,7 @@ export async function sendPreparedInOrder(params: {
   for (const op of params.operations) {
     if (!op || op.instructions.length === 0) continue;
     signatures.push(
-      await sendV0({
+      await sendVersioned({
         conn: params.conn,
         network: params.network,
         signers: params.signers,

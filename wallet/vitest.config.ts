@@ -15,6 +15,8 @@ export default defineConfig({
         test: {
           name: "unit",
           server,
+          // Large FUZZ_RUNS values need more than the 5 s default.
+          testTimeout: 10 * 60_000,
           include: ["test/unit/**/*.test.ts"],
         },
       },

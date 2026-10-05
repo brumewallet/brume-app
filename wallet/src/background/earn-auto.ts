@@ -27,7 +27,7 @@ import {
   writeEarnRecord,
   type EarnRecord,
 } from "./earn";
-import { sendPreparedInOrder, sendV0 } from "./tx-send";
+import { sendPreparedInOrder, sendVersioned } from "./tx-send";
 
 export const DEFAULT_AUTO_EARN_PERIOD_SECONDS = 30n * 24n * 60n * 60n;
 // Smallest amount a sweep moves, so fees never outweigh the deposit.
@@ -121,7 +121,7 @@ async function topUpAutomationSol(params: {
 }): Promise<void> {
   const have = BigInt(await params.conn.getBalance(params.automation, "confirmed"));
   if (have >= AUTOMATION_MIN_LAMPORTS) return;
-  await sendV0({
+  await sendVersioned({
     conn: params.conn,
     network: params.network,
     signers: [params.from],
@@ -355,7 +355,7 @@ async function supplyIdleUsdc(params: {
     },
     PROGRAM_ID,
   );
-  return sendV0({
+  return sendVersioned({
     conn,
     network,
     signers: [automation],

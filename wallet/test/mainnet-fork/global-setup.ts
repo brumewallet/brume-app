@@ -1,4 +1,4 @@
-// Starts a validator forked from mainnet-beta (Squads program, its config, USDC, Token-2022); env: BRUME_FORK_SOURCE_RPC, BRUME_FORK_PORT, BRUME_FORK_KEEP.
+// Starts a validator forked from mainnet-beta (Squads program, its config, USDC, Token-2022); env: BRUME_FORK_SOURCE_RPC, BRUME_FORK_PORT, BRUME_FORK_KEEP, BRUME_TEST_VALIDATOR.
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -163,7 +163,8 @@ export default async function setup(project: TestProject) {
     ...(await kaminoCloneArgs(sourceRpc)),
   ];
   const log = fs.openSync(logFile, "a");
-  const proc = spawn("solana-test-validator", args, { stdio: ["ignore", log, log] });
+  // Version 1 transactions need Agave 4.x; BRUME_TEST_VALIDATOR points at that binary.
+  const proc = spawn(process.env.BRUME_TEST_VALIDATOR ?? "solana-test-validator", args, { stdio: ["ignore", log, log] });
 
   const forkRpc = `http://127.0.0.1:${base}`;
   try {
