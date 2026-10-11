@@ -27,6 +27,8 @@ pnpm dev            # wallet Vite + API on http://localhost:3001
 
 Load the extension: Chrome > `chrome://extensions` > Developer mode > **Load unpacked** > choose `wallet/dist` (after `pnpm dev` or `pnpm build` in `wallet/`).
 
+Beta testers do not build from source. They follow [brume.cash/install](https://brume.cash/install), which loads the zip from the latest GitHub release.
+
 ## Commands
 
 ### Root
@@ -43,7 +45,34 @@ Load the extension: Chrome > `chrome://extensions` > Developer mode > **Load unp
 ```bash
 pnpm dev            # hot reload
 pnpm build          # production -> dist/
+pnpm package        # build + release/brume-wallet-v<version>.zip for a GitHub release
 ```
+
+### Wallet Environment Variables
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `VITE_POSTHOG_KEY` | No | PostHog project key (US cloud). Empty means analytics is off. When set, users must still opt in (Welcome screen or Settings > Beta). |
+
+### Beta analytics events
+
+Sent only after opt-in. No addresses, amounts, or signatures. Seed, key, and password screens carry `ph-no-capture` and are not recorded.
+
+| Event | When |
+| --- | --- |
+| `app_opened` | Popup or side panel opens |
+| `onboarding_completed` | New vault created or imported (`method`: `create`, `import_seed`, `import_key`) |
+| `wallet_unlocked` | Unlock succeeds |
+| `shield_succeeded` / `unshield_succeeded` | Shield or unshield lands (`mint`) |
+| `shield_failed` / `unshield_failed` | Shield or unshield throws (`mint`) |
+| `send_succeeded` | SOL or SPL send lands |
+| `dapp_connect_approved` / `dapp_sign_approved` | User approves a dApp request |
+
+Activation funnel in PostHog: `onboarding_completed` → `shield_succeeded` → `unshield_succeeded`, conversion window 7 days. The person property `first_open_at` holds the first time the extension opened.
+
+### dApp connection
+
+The injected script registers Brume through the [Wallet Standard](https://github.com/wallet-standard/wallet-standard) (`standard:connect`, `standard:events`, `solana:signTransaction`, `solana:signMessage`) and also sets the legacy `window.solana` / `window.brume`. Every connect or sign request opens an approval window. Closing that window rejects the request.
 
 ### API (`/app`)
 
@@ -106,19 +135,23 @@ These are the brand-facing answers kept consistent across the codebase and any p
 
 ### Privacy
 
-**Is Brume a mixer?**
-No. The shielded balance feature moves tokens between your public wallet and a private balance. It does not shuffle or tumble funds. The shielding approach is bounded by Solana's public ledger - see the Privacy Limits section in the docs for what is and is not protected.
+Source of truth for privacy claims: `shared/src/content/disclosure.ts` (shown at [brume.cash/disclosure](https://brume.cash/disclosure) and in the extension). If an answer here disagrees with it, the disclosure wins.
 
-**What does "privacy by default" mean?**
-When you send through the Shield path, your public wallet balance does not appear in the on-chain trace to the recipient. Privacy is the default flow, not an opt-in. Transparent transfers are still available if you need them.
+**Is Brume a mixer?**
+No. Shield moves tokens between your wallet and a vault (a Smart Account) that only your key controls. It does not shuffle or tumble funds.
+
+**What does Shield hide today?**
+Nothing on-chain. The vault is a normal account: its balance, the link from your wallet to the vault, and every shield, unshield, and vault send are publicly visible. Shield keeps funds apart from your main wallet balance. Private balances and transfers are on the roadmap.
 
 **Is Solana anonymous by default?**
-No. Every Solana transaction - sender, recipient, amount, token - is written to a public ledger and indexed by chain analytics within seconds. Brume's shield feature is what adds a private path on top of that.
+No. Every Solana transaction - sender, recipient, amount, token - is written to a public ledger and indexed by chain analytics within seconds.
 
 **Is Shield available on mainnet?**
-Not during the current phase. Shield is supported on Solana devnet while the feature is in early development. Mainnet support is on the roadmap.
+Yes. Shield and unshield work on Solana Mainnet and Devnet. On Mainnet, shielded balances are real funds.
 
-### Agents
+### Agents (roadmap, not built)
+
+Agent policies are not in the current release. These answers describe the planned design.
 
 **What stops an agent from sending everything?**
 Policies. An agent with a 5 SOL per day spend limit cannot move 6 SOL regardless of what it is instructed to do. Spend limits and approval gates are enforced at the policy layer, not by trusting the agent.
@@ -135,7 +168,7 @@ Every action an agent takes is labeled and logged. Nothing your wallet does on b
 You do. Keys are encrypted and stored in your browser's local extension storage. Brume never has access to your private keys.
 
 **Does Brume work with any Solana dApp?**
-Yes. Brume injects `window.solana` and implements the standard wallet adapter interface. Any dApp that supports Solana wallet adapters will work.
+With dApps that support the Wallet Standard, which includes apps built on `@solana/wallet-adapter`. Brume also sets the legacy `window.solana`. Brume does not yet support `solana:signAndSendTransaction`; wallet-adapter falls back to sign-then-send, but apps that require that feature will not list Brume.
 
 **What wallets can I import?**
 You can generate a new HD wallet with a 12 or 24-word seed phrase, or import an existing wallet by seed phrase or private key. Multiple accounts under the same seed phrase are supported.

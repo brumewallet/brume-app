@@ -8,6 +8,7 @@ import { useWalletStore } from "../store";
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "../lib/useCopyToClipboard";
 import { ArrowLeftIcon, CopyIcon } from "@/components/Icons";
+import { NO_CAPTURE_CLASS } from "../lib/analytics";
 
 const stepCrossfade = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const };
 
@@ -63,7 +64,7 @@ export function PrivateKey() {
 
   return (
     <motion.div
-      className="flex min-h-full flex-1 flex-col gap-4 bg-background px-4 pb-24 pt-4"
+      className={`${NO_CAPTURE_CLASS} flex min-h-full flex-1 flex-col gap-4 bg-background px-4 pb-24 pt-4`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 22 }}

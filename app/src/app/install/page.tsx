@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BRUME_FEEDBACK_URL, BRUME_GITHUB_REPO_URL, BRUME_RELEASES_URL } from "@brume/shared";
 import { BrumeMark, BrumeWordmark } from "@/components/marketing/logo";
 
 export const metadata: Metadata = {
@@ -16,15 +17,15 @@ const STEPS = [
       <>
         Go to{" "}
         <a
-          href="https://github.com/brume-wallet/brume-app/releases"
+          href={BRUME_RELEASES_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium text-ube-600 underline-offset-2 hover:underline"
         >
-          github.com/brume-wallet/brume-app/releases
+          the latest GitHub release
         </a>{" "}
-        and download the latest <code className="rounded bg-navy-100 px-1 py-0.5 text-xs text-navy-700">brume-wallet-*.zip</code> asset.
-        Extract it to a folder you will remember.
+        and download the <code className="rounded bg-navy-100 px-1 py-0.5 text-xs text-navy-700">brume-wallet-*.zip</code> asset.
+        Unzip it to a folder that you will keep. Chrome loads the extension from that folder.
       </>
     ),
   },
@@ -36,8 +37,8 @@ const STEPS = [
         Open{" "}
         <code className="rounded bg-navy-100 px-1 py-0.5 text-xs text-navy-700">chrome://extensions</code>
         in your browser. Enable <strong>Developer mode</strong> (top-right toggle).
-        Click <strong>Load unpacked</strong> and select the <code className="rounded bg-navy-100 px-1 py-0.5 text-xs text-navy-700">dist/</code> folder
-        from the zip you extracted.
+        Click <strong>Load unpacked</strong> and select the folder that you unzipped (it
+        contains <code className="rounded bg-navy-100 px-1 py-0.5 text-xs text-navy-700">manifest.json</code>).
       </>
     ),
   },
@@ -46,10 +47,10 @@ const STEPS = [
     heading: "Set up and try Shield",
     body: (
       <>
-        Pin Brume to the toolbar. Open the extension, create or import a wallet, then go to{" "}
-        <strong>Settings → Network → Devnet</strong>.
-        Request a devnet airdrop, then tap the <strong>Shield</strong> tab to try shielded
-        transfers. Read the{" "}
+        Pin Brume to the toolbar. Open the extension and create or import a wallet. To
+        test with no real funds, go to <strong>Settings → Network → Devnet</strong> and
+        request an airdrop. Then open the <strong>Shield</strong> tab: shield a token into
+        your vault, then unshield it back. Read the{" "}
         <Link
           href="/disclosure"
           className="font-medium text-ube-600 underline-offset-2 hover:underline"
@@ -125,6 +126,50 @@ export default function InstallPage() {
             </li>
           ))}
         </ol>
+
+        <section className="mt-16 max-w-2xl rounded-2xl glass p-6 sm:p-8">
+          <h2 className="font-display text-xl tracking-tightest text-ink sm:text-2xl">
+            Updating and feedback
+          </h2>
+          <ul className="mt-4 list-disc space-y-2 pl-5 leading-relaxed text-navy-500">
+            <li>
+              To update, download the new release, replace the files in the same folder, and
+              click the reload icon on the Brume card in{" "}
+              <code className="rounded bg-navy-100 px-1 py-0.5 text-xs text-navy-700">chrome://extensions</code>.
+              Your wallet stays on your device.
+            </li>
+            <li>
+              dApps that support the Wallet Standard list Brume in their wallet picker. Each
+              connect or sign request opens a Brume approval window.
+            </li>
+            <li>
+              On the welcome screen you can opt in to share usage events and screen recordings.
+              It is off by default. See the{" "}
+              <Link href="/disclosure" className="font-medium text-ube-600 underline-offset-2 hover:underline">
+                disclosure
+              </Link>{" "}
+              for what that includes.
+            </li>
+          </ul>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              href={BRUME_FEEDBACK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="press inline-flex items-center rounded-full bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-navy-900"
+            >
+              Send feedback
+            </a>
+            <a
+              href={BRUME_GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="press inline-flex items-center rounded-full glass hairline px-5 py-2.5 text-sm font-semibold text-ink transition hover:-translate-y-0.5"
+            >
+              Source on GitHub
+            </a>
+          </div>
+        </section>
       </main>
 
       <footer className="mx-auto max-w-5xl px-5 pb-12 sm:px-6">

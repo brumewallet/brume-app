@@ -53,6 +53,12 @@ export const DISCLOSURE_ITEMS: DisclosureItem[] = [
     state: "roadmap",
   },
   {
+    id: "trust-beta-analytics",
+    label: "Beta usage analytics (opt-in)",
+    body: "Off unless you turn it on. If you turn it on, the extension sends product events and screen recordings of the Brume window to PostHog. Events do not include addresses, amounts, or signatures. Seed phrase, private key, and password screens are not recorded. Other screens, such as your dashboard, can be. Turn it off in Settings.",
+    state: "trust",
+  },
+  {
     id: "networks",
     label: "Mainnet and Devnet",
     body: "Shield and unshield work on Solana Mainnet and Devnet. On Mainnet, shielded balances are real funds and every transaction is final. On Devnet, they are test tokens with no real-world value.",

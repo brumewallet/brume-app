@@ -40,7 +40,7 @@ export function Waitlist() {
       });
       if (!res.ok) throw new Error("bad status");
       setStatus("done");
-      setMessage("You're on the list. We'll email you the moment Brume ships.");
+      setMessage("You're on the list. We'll email you when a new release ships.");
     } catch {
       setStatus("error");
       setMessage("Something broke on our end. Try again in a moment.");

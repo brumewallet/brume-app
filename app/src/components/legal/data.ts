@@ -36,7 +36,7 @@ export const company = {
   governingLaw: "the State of Delaware, United States",
 } as const;
 
-export const LAST_UPDATED = "June 16, 2026";
+export const LAST_UPDATED = "October 11, 2026";
 
 export const terms: LegalDoc = {
   slug: "terms",
@@ -378,10 +378,19 @@ export const privacy: LegalDoc = {
           type: "p",
           text: "If you join the waitlist, we process the email address you submit so we can notify you about the launch.",
         },
-        { type: "subheading", text: "Support and analytics" },
+        { type: "subheading", text: "Beta usage analytics and screen recordings (opt-in)" },
         {
           type: "p",
-          text: "If you email us, we process your message and contact details to respond. [verify] If we run website analytics, we use privacy-respecting, aggregate measurement that does not identify you; we do not use advertising trackers.",
+          text: "The beta extension sends usage data only if you turn on \"Help improve the beta\" on the welcome screen or in Settings. It is off until you turn it on, and you can turn it off at any time in Settings. When it is on, we use PostHog (US cloud) to receive: product events (for example, wallet created, wallet unlocked, shield or unshield completed, send completed, dApp connect approved), the token mint for shield and send events, network, extension version, a random device identifier, and screen recordings of the Brume extension window.",
+        },
+        {
+          type: "p",
+          text: "We do not send wallet addresses, amounts, or transaction signatures as event data. Screens that show or accept a seed phrase, private key, or password are excluded from recordings, and all text inputs are masked. Recordings can still show other on-screen content, such as balances and addresses on the dashboard. We do not record web pages outside the extension.",
+        },
+        { type: "subheading", text: "Support" },
+        {
+          type: "p",
+          text: "If you email us or open a GitHub issue, we process your message and contact details to respond. We do not use advertising trackers.",
         },
       ],
     },
@@ -396,6 +405,7 @@ export const privacy: LegalDoc = {
             "Prevent abuse, fraud, and excessive use through rate limiting.",
             "Respond to your questions and support requests.",
             "Send you a launch notification if you joined the waitlist.",
+            "If you opted in, find and fix problems in the beta and measure whether people complete core flows.",
             "Comply with legal obligations and enforce our Terms.",
           ],
         },
@@ -408,7 +418,7 @@ export const privacy: LegalDoc = {
         {
           type: "list",
           items: [
-            "Consent, for the waitlist email. You can withdraw it at any time.",
+            "Consent, for the waitlist email and for beta usage analytics and screen recordings. You can withdraw it at any time.",
             "Legitimate interests, for operating and securing the Service and preventing abuse.",
             "Contract, to provide the parts of the Service you request.",
             "Legal obligation, where the law requires us to process data.",
@@ -429,6 +439,7 @@ export const privacy: LegalDoc = {
           items: [
             "RPC and blockchain data providers (for example, Helius and Solana RPC providers) to read on-chain data.",
             "Hosting and database infrastructure (for example, Supabase) to run our APIs.",
+            "PostHog, as our analytics processor, only if you opted in to beta usage analytics.",
             "[verify] An email provider, if we use one to manage the waitlist.",
             "Authorities or others where required by law, or to protect rights, safety, and the integrity of the Service.",
             "A successor entity in connection with a merger, acquisition, or sale of assets.",
@@ -460,6 +471,7 @@ export const privacy: LegalDoc = {
             "API request logs are kept for a short period for security and abuse prevention, then deleted or anonymized.",
             "Waitlist email addresses are kept until you unsubscribe or for a reasonable period after launch.",
             "Support messages are kept only as long as needed to handle your request.",
+            "Beta analytics events and screen recordings are kept under PostHog's retention settings for our project and deleted at the end of the beta program. [verify]",
             "Your local keystore stays on your device until you remove it. We cannot delete it for you.",
           ],
         },

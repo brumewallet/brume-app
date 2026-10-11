@@ -1,5 +1,6 @@
 import "@/polyfills";
 import { Transaction, VersionedTransaction } from "@solana/web3.js";
+import { registerStandardWallet } from "./wallet-standard";
 
 const TO_CONTENT = "brume_to_content";
 const FROM_CONTENT = "brume_from_content";
@@ -100,6 +101,14 @@ function emit(ev: string, ...args: unknown[]): void {
   });
 }
 
+// Legacy `Transaction.serialize()` throws when signatures are missing, and a
+// transaction sent for signing is unsigned by definition.
+function serializeUnsigned(tx: Transaction | VersionedTransaction): Uint8Array {
+  return tx instanceof VersionedTransaction
+    ? tx.serialize()
+    : tx.serialize({ requireAllSignatures: false, verifySignatures: false });
+}
+
 function deserializeSigned(b64: string): Transaction | VersionedTransaction {
   const bytes = b64ToU8(b64);
   try {
@@ -117,6 +126,7 @@ const brume = {
     const res = (await post("connect")) as { publicKey: string };
     brume.publicKey = pkObj(res.publicKey);
     emit("connect", brume.publicKey);
+    standard.setAddress(res.publicKey);
     return { publicKey: brume.publicKey };
   },
 
@@ -124,15 +134,14 @@ const brume = {
     await post("disconnect");
     brume.publicKey = null;
     emit("disconnect");
+    standard.setAddress(null);
   },
 
   async signTransaction(
     tx: Transaction | VersionedTransaction,
   ): Promise<Transaction | VersionedTransaction> {
-    const bytes =
-      tx instanceof VersionedTransaction ? tx.serialize() : tx.serialize();
     const out = (await post("signTransaction", {
-      serializedTransaction: u8ToB64(bytes),
+      serializedTransaction: u8ToB64(serializeUnsigned(tx)),
     })) as { signedTransaction: string };
     return deserializeSigned(out.signedTransaction);
   },
@@ -140,9 +149,7 @@ const brume = {
   async signAllTransactions<T extends Transaction | VersionedTransaction>(
     txs: T[],
   ): Promise<T[]> {
-    const serializedTransactions = txs.map((tx) =>
-      u8ToB64(tx instanceof VersionedTransaction ? tx.serialize() : tx.serialize()),
-    );
+    const serializedTransactions = txs.map((tx) => u8ToB64(serializeUnsigned(tx)));
     const out = (await post("signAllTransactions", {
       serializedTransactions,
     })) as { signedTransactions: string[] };
@@ -166,6 +173,21 @@ declare global {
     solana?: typeof brume;
   }
 }
+
+const standard = registerStandardWallet({
+  post,
+  toB64: u8ToB64,
+  fromB64: b64ToU8,
+  onAddress(address) {
+    if (address) {
+      brume.publicKey = pkObj(address);
+      emit("connect", brume.publicKey);
+    } else if (brume.publicKey) {
+      brume.publicKey = null;
+      emit("disconnect");
+    }
+  },
+});
 
 window.brume = brume;
 try {

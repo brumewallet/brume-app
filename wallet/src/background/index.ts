@@ -222,10 +222,72 @@ function clearWalletSession(): void {
   clearWalletSessionCaches();
 }
 
+// dApp requests open a small wallet window. A badge alone is easy to miss,
+// and chrome.sidePanel.open() needs a user gesture that a page request does not give.
+let approvalWindowId: number | null = null;
+
+async function openApprovalWindow(): Promise<void> {
+  if (approvalWindowId !== null) {
+    try {
+      await chrome.windows.update(approvalWindowId, { focused: true });
+      return;
+    } catch {
+      approvalWindowId = null;
+    }
+  }
+  try {
+    const win = await chrome.windows.create({
+      url: chrome.runtime.getURL("index.html?approval=1"),
+      type: "popup",
+      width: 380,
+      height: 660,
+      focused: true,
+    });
+    approvalWindowId = win?.id ?? null;
+  } catch (e) {
+    console.error("[Brume] could not open approval window", e);
+  }
+}
+
+async function rejectAllPendingDappRequests(): Promise<void> {
+  if (pendingConnect) {
+    const { tabId, id } = pendingConnect;
+    pendingConnect = null;
+    await notifyTab(tabId, {
+      type: "BRUME_RESOLVE",
+      requestId: id,
+      ok: false,
+      error: walletError(WalletErrorCodes.WalletUserRejected, "User rejected connection"),
+    });
+  }
+  let item: PendingSignRequest | undefined;
+  while ((item = signQueue.dequeue())) {
+    await notifyTab(item.tabId, {
+      type: "BRUME_RESOLVE",
+      requestId: item.dappRequestId,
+      ok: false,
+      error: walletError(WalletErrorCodes.WalletUserRejected, "User rejected signature"),
+    });
+  }
+  updateBadge();
+}
+
+// Closing the approval window counts as a rejection, so the dApp does not wait forever.
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (windowId !== approvalWindowId) return;
+  approvalWindowId = null;
+  void rejectAllPendingDappRequests();
+});
+
 function updateBadge(): void {
   const n = (pendingConnect ? 1 : 0) + signQueue.count();
   void chrome.action.setBadgeText({ text: n > 0 ? String(n) : "" });
   void chrome.action.setBadgeBackgroundColor({ color: "#2dd4bf" });
+  if (n === 0 && approvalWindowId !== null) {
+    const id = approvalWindowId;
+    approvalWindowId = null;
+    void chrome.windows.remove(id).catch(() => {});
+  }
 }
 
 function accountById(
@@ -1975,6 +2037,7 @@ async function handleMessage(
           tabId,
         };
         updateBadge();
+        void openApprovalWindow();
         sendResponse({ ok: true });
         return;
       }
@@ -2096,6 +2159,7 @@ async function handleMessage(
           serializedTransaction: raw.payload.serializedTransaction,
         });
         updateBadge();
+        void openApprovalWindow();
         sendResponse({ ok: true });
         return;
       }
@@ -2144,6 +2208,7 @@ async function handleMessage(
           serializedTransactions: raw.payload.serializedTransactions,
         });
         updateBadge();
+        void openApprovalWindow();
         sendResponse({ ok: true });
         return;
       }
@@ -2192,6 +2257,7 @@ async function handleMessage(
           message: raw.payload.message,
         });
         updateBadge();
+        void openApprovalWindow();
         sendResponse({ ok: true });
         return;
       }

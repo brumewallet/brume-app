@@ -1,5 +1,12 @@
 export const BRUME_GITHUB_REPO_URL =
-  "https://github.com/brume-wallet/brume-app" as const;
+  "https://github.com/brumewallet/brume-app" as const;
+
+export const BRUME_RELEASES_URL = `${BRUME_GITHUB_REPO_URL}/releases/latest` as const;
+
+/** Beta feedback goes to GitHub issues. Swap for a form URL if testers lack GitHub accounts. */
+export const BRUME_FEEDBACK_URL = `${BRUME_GITHUB_REPO_URL}/issues/new` as const;
+
+export const BRUME_SITE_URL = "https://brume.cash" as const;
 
 export const BASE58_ALPHABET =
   "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";

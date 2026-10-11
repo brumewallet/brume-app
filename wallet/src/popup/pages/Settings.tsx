@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Globe,
   Lock,
+  MessageSquare,
   Monitor,
   Moon,
   Server,
@@ -15,6 +16,7 @@ import {
   Timer,
   Users,
 } from "lucide-react";
+import { BRUME_FEEDBACK_URL } from "@brume/shared";
 import { NETWORKS, type NetworkId } from "@/shared/constants";
 import {
   DEFAULT_PRIORITY_LEVEL,
@@ -31,6 +33,12 @@ import * as msg from "../messaging";
 import { useWalletStore } from "../store";
 import { PasswordInput } from "../components/PasswordInput";
 import { CopyIcon, EyeIcon, EyeSlashIcon } from "@/components/Icons";
+import {
+  NO_CAPTURE_CLASS,
+  analyticsAvailable,
+  readConsent,
+  setConsent,
+} from "../lib/analytics";
 
 const font = "font-sans";
 const secondary = "text-muted-foreground";
@@ -220,6 +228,7 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [feeQuotes, setFeeQuotes] = useState<PriorityFeeQuote[] | null>(null);
   const [priorityErr, setPriorityErr] = useState<string | null>(null);
   const [lockTimeout, setLockTimeout] = useState(15);
+  const [shareUsage, setShareUsage] = useState(false);
   const [theme, setTheme] = useState<"system" | "light" | "dark">(
     () => (localStorage.getItem("brume:theme") as "system" | "light" | "dark") ?? "system",
   );
@@ -238,6 +247,10 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
 
   useEffect(() => {
     void readUiSurface().then(setUiSurfaceState);
+  }, []);
+
+  useEffect(() => {
+    void readConsent().then((c) => setShareUsage(c === "granted"));
   }, []);
 
   useEffect(() => {
@@ -473,7 +486,7 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
             )}
           </SettingsRow>
           {showPrivateKey ? (
-            <div className="mx-3 mb-2 flex flex-col gap-2 rounded-xl bg-accent p-3">
+            <div className={`${NO_CAPTURE_CLASS} mx-3 mb-2 flex flex-col gap-2 rounded-xl bg-accent p-3`}>
               <span
                 className={cn(
                   font,
@@ -794,6 +807,37 @@ const [showPrivateKey, setShowPrivateKey] = useState(false);
                 payload: { minutes: v },
               });
             }}
+          />
+        </Section>
+
+        <Section label="Beta">
+          {analyticsAvailable() ? (
+            <>
+              <div className="px-4 pt-2.5">
+                <span className={cn(font, "text-[14px] font-normal leading-5 text-foreground")}>
+                  Share usage and screen recordings
+                </span>
+                <p className={cn(font, "mt-0.5 text-[11px] leading-relaxed text-muted-foreground")}>
+                  Helps us fix the beta. Seed phrases, private keys, and passwords are never recorded.
+                </p>
+              </div>
+              <SegmentedControl
+                options={[
+                  { value: "off" as const, label: "Off" },
+                  { value: "on" as const, label: "On" },
+                ]}
+                value={shareUsage ? "on" : "off"}
+                onChange={(v) => {
+                  setShareUsage(v === "on");
+                  void setConsent(v === "on" ? "granted" : "denied");
+                }}
+              />
+            </>
+          ) : null}
+          <SettingsRow
+            icon={<MessageSquare className="h-[18px] w-[18px]" strokeWidth={2} />}
+            title="Send feedback"
+            onClick={() => void chrome.tabs.create({ url: BRUME_FEEDBACK_URL })}
           />
         </Section>
 
