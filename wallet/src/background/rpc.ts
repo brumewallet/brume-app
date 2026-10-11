@@ -16,7 +16,6 @@ import {
 } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import {
-  DEFAULT_BRUME_API_ORIGIN,
   NETWORKS,
   SOL_BASE_UNITS_PER_SOL,
   SOL_WRAPPED_MINT,
@@ -47,6 +46,7 @@ import {
   brumeShield,
   brumeVaultTransferOut,
 } from "./brume-vault";
+import { BRUME_API_ORIGIN } from "@/shared/api-origin";
 
 async function sendRawTransactionWithDetailedLogs(
   conn: Connection,
@@ -93,7 +93,7 @@ export function resolveRpcUrl(
 }
 
 function brumeRpcProxyUrl(network: NetworkId): string {
-  return `${DEFAULT_BRUME_API_ORIGIN.replace(/\/$/, "")}/api/rpc?network=${network}`;
+  return `${BRUME_API_ORIGIN}/api/rpc?network=${network}`;
 }
 
 const COMMITMENT_RANK: Record<string, number> = { processed: 0, confirmed: 1, finalized: 2 };

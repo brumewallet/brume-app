@@ -141,10 +141,10 @@ export default function Home() {
           <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
             <div className="max-w-2xl">
               <Reveal>
-                <h1 className="font-display text-[clamp(1.75rem,6.2vw,3.8rem)] leading-[1.0] tracking-tightest text-ink whitespace-nowrap">
-                  Public is the feature
+                <h1 className="font-display text-[clamp(1.75rem,6.2vw,3.8rem)] leading-[1.0] tracking-tightest text-ink sm:whitespace-nowrap">
+                  The wallet that tells you
                   <br />
-                  you opt into.
+                  what is public.
                 </h1>
               </Reveal>
 
@@ -368,7 +368,7 @@ export default function Home() {
           <div>
             <BrumeWordmark />
             <p className="mt-2 text-sm text-navy-400">
-              Sovereignty through silence · brume.cash
+              Honest about privacy · brume.cash
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-navy-500">

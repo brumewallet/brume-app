@@ -1,13 +1,13 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { NextResponse } from "next/server";
-import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
+import { networkFromParam, rpcUrlFromParam } from "@/lib/rpc";
 
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const owner = searchParams.get("owner");
   const network = networkFromParam(searchParams.get("network"));
-  const rpcUrl = searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
+  const rpcUrl = rpcUrlFromParam(searchParams.get("rpcUrl"), network);
 
   if (!owner) {
     return NextResponse.json({ error: "owner is required" }, { status: 400 });

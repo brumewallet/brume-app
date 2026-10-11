@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { NextResponse } from "next/server";
-import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
+import { networkFromParam, rpcUrlFromParam } from "@/lib/rpc";
 
 
 const TOKEN_METADATA_PROGRAM_ID = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
@@ -31,7 +31,7 @@ export async function GET(
   const { mint } = await params;
   const { searchParams } = new URL(request.url);
   const network = networkFromParam(searchParams.get("network"));
-  const rpcUrl = searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
+  const rpcUrl = rpcUrlFromParam(searchParams.get("rpcUrl"), network);
 
   if (!mint) {
     return NextResponse.json({ error: "mint is required" }, { status: 400 });

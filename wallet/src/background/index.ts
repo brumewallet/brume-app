@@ -35,7 +35,7 @@ import {
   fetchBrumePortfolio,
   fetchBrumeSolBalance,
 } from "./api-client";
-import { validateOrigin } from "./origin-guard";
+import { isAllowedSender, validateOrigin } from "./origin-guard";
 import {
   burnMplCoreNft,
   burnSplToken,
@@ -59,6 +59,7 @@ import {
 import { priorityFeesApply, quotePriorityFees } from "./priority-fee";
 import * as earnService from "./earn-service";
 import { clearPersisted, loadVault, saveVault } from "./storage";
+import { clearSession, loadSession, saveSession } from "./session-store";
 import {
   isPortfolioCacheFresh,
   isShieldBalancesCacheFresh,
@@ -157,6 +158,47 @@ let cachedShieldedBalances: Record<string, string> | null = null;
 let lastRpcError: string | null = null;
 let lastIndexerError: string | null = null;
 
+// Session survives worker restarts through chrome.storage.session (see session-store.ts).
+let persistedSessionFingerprint = "";
+
+function sessionFingerprint(): string {
+  if (!sessionKeypair || !sessionAccountId || !unlockedKeypairs) return "";
+  return [sessionAccountId, [...unlockedKeypairs.keys()].sort().join(","), sessionVaultPassword ?? ""].join("|");
+}
+
+async function syncSessionStore(): Promise<void> {
+  const next = sessionFingerprint();
+  if (next === persistedSessionFingerprint) return;
+  persistedSessionFingerprint = next;
+  try {
+    if (!next) {
+      await clearSession();
+    } else {
+      await saveSession({
+        accountId: sessionAccountId!,
+        password: sessionVaultPassword,
+        keypairs: unlockedKeypairs!,
+      });
+    }
+  } catch (e) {
+    console.error("[Brume] could not sync session store", e);
+  }
+}
+
+const sessionRestored: Promise<void> = (async () => {
+  try {
+    const s = await loadSession();
+    if (!s || sessionKeypair) return;
+    unlockedKeypairs = s.keypairs;
+    sessionAccountId = s.accountId;
+    sessionKeypair = s.keypairs.get(s.accountId) ?? null;
+    sessionVaultPassword = s.password;
+    persistedSessionFingerprint = sessionFingerprint();
+  } catch (e) {
+    console.error("[Brume] could not restore session", e);
+  }
+})();
+
 let pendingConnect: PendingConnectRequest | null = null;
 const signQueue = new ApprovalQueue<PendingSignRequest>();
 
@@ -188,6 +230,7 @@ async function readLastActivityAt(): Promise<number> {
 }
 
 async function checkAutoLock(): Promise<void> {
+  await sessionRestored;
   if (!sessionKeypair) return;
   const [minutes, last] = await Promise.all([
     getAutoLockTimeoutMinutes(),
@@ -220,6 +263,7 @@ function clearWalletSession(): void {
   unlockedKeypairs = null;
   lastActivityAt = 0;
   clearWalletSessionCaches();
+  void syncSessionStore();
 }
 
 // dApp requests open a small wallet window. A badge alone is easy to miss,
@@ -246,6 +290,23 @@ async function openApprovalWindow(): Promise<void> {
     approvalWindowId = win?.id ?? null;
   } catch (e) {
     console.error("[Brume] could not open approval window", e);
+  }
+}
+
+// Connected pages re-read their accounts through DAPP_GET_ACCOUNTS, which is
+// origin-scoped, so a page never learns an address it was not approved for.
+async function broadcastAccountsChanged(): Promise<void> {
+  try {
+    const tabs = await chrome.tabs.query({});
+    await Promise.all(
+      tabs.map((t) =>
+        t.id == null
+          ? undefined
+          : chrome.tabs.sendMessage(t.id, { type: "BRUME_EVENT", event: "accountsChanged" }).catch(() => {}),
+      ),
+    );
+  } catch (e) {
+    console.error("[Brume] could not notify tabs", e);
   }
 }
 
@@ -649,6 +710,14 @@ async function handleMessage(
   sender: chrome.runtime.MessageSender,
   sendResponse: (r: unknown) => void,
 ): Promise<void> {
+  await sessionRestored;
+  if (!isAllowedSender(raw?.type ?? "", sender.url, chrome.runtime.getURL(""))) {
+    sendResponse({
+      ok: false,
+      error: walletError(WalletErrorCodes.WalletConnectionError, "Unauthorized sender"),
+    });
+    return;
+  }
   try {
     switch (raw.type) {
       case "GET_STATE": {
@@ -996,6 +1065,7 @@ async function handleMessage(
         await saveVault(v);
         sessionKeypair = kp;
         sessionAccountId = raw.payload.accountId;
+        void broadcastAccountsChanged();
         await hydrateWalletCachesFromStorage(
           v.network ?? DEFAULT_NETWORK,
           kp.publicKey.toBase58(),
@@ -1060,6 +1130,7 @@ async function handleMessage(
           }
         }
         await saveVault(v);
+        void broadcastAccountsChanged();
         if (sessionKeypair) {
           await hydrateWalletCachesFromStorage(
             v.network ?? DEFAULT_NETWORK,
@@ -1774,6 +1845,7 @@ async function handleMessage(
         const active = getActiveAccountEntry(p);
         delete active.connectedOrigins[raw.payload.origin];
         await saveVault(p);
+        void broadcastAccountsChanged();
         sendResponse({ ok: true });
         return;
       }
@@ -1781,23 +1853,12 @@ async function handleMessage(
       case "EXPORT_SECRET": {
         const p = await getVaultOrThrow();
         const active = getActiveAccountEntry(p);
-        if (
-          !raw.payload.password &&
-          sessionKeypair &&
-          sessionAccountId === p.activeAccountId &&
-          sessionKeypair.publicKey.toBase58() === active.keystore.address
-        ) {
-          sendResponse({
-            ok: true,
-            payload: { secretKeyBase64: bytesToBase64(sessionKeypair.secretKey) },
-          });
-          return;
-        }
-        const pw = raw.payload.password ?? sessionVaultPassword;
+        // Always ask for the password: an unlocked session alone must not export a key.
+        const pw = raw.payload.password;
         if (!pw) {
           sendResponse({
             ok: false,
-            error: walletError(4002, "Unlock your wallet first"),
+            error: walletError(4002, "Enter your password to export the key"),
           });
           return;
         }
@@ -1896,12 +1957,26 @@ async function handleMessage(
               base64ToBytes(item.serializedTransaction),
               sessionKeypair,
             );
-            await notifyTab(item.tabId, {
-              type: "BRUME_RESOLVE",
-              requestId: item.dappRequestId,
-              ok: true,
-              result: { signedTransaction: bytesToBase64(signed) },
-            });
+            if (item.send) {
+              const v = await getVaultOrThrow();
+              const signature = await getConnection(
+                v.network ?? DEFAULT_NETWORK,
+                v.rpcUrlOverride ?? null,
+              ).sendRawTransaction(signed, { skipPreflight: item.send.skipPreflight });
+              await notifyTab(item.tabId, {
+                type: "BRUME_RESOLVE",
+                requestId: item.dappRequestId,
+                ok: true,
+                result: { signature },
+              });
+            } else {
+              await notifyTab(item.tabId, {
+                type: "BRUME_RESOLVE",
+                requestId: item.dappRequestId,
+                ok: true,
+                result: { signedTransaction: bytesToBase64(signed) },
+              });
+            }
           } else if (
             item.kind === "allTransactions" &&
             item.serializedTransactions
@@ -2115,6 +2190,61 @@ async function handleMessage(
         return;
       }
 
+      case "DAPP_SIGN_AND_SEND_TRANSACTION": {
+        let tabId: number;
+        let origin: string;
+        try {
+          ({ tabId, origin } = requireTabContext(sender));
+        } catch {
+          sendResponse({
+            ok: false,
+            error: walletError(4002, "No tab context"),
+          });
+          return;
+        }
+        const p = await getVaultOrThrow();
+        const active = getActiveAccountEntry(p);
+        if (!active.connectedOrigins[origin]) {
+          await notifyTab(tabId, {
+            type: "BRUME_RESOLVE",
+            requestId: raw.requestId,
+            ok: false,
+            error: walletError(4002, "Not connected"),
+          });
+          sendResponse({ ok: true });
+          return;
+        }
+        // Brume sends on its own network; refuse a request meant for another cluster.
+        const network = p.network ?? DEFAULT_NETWORK;
+        const walletChain = network === "mainnet-beta" ? "solana:mainnet" : `solana:${network}`;
+        if (raw.payload.chain && raw.payload.chain !== walletChain) {
+          await notifyTab(tabId, {
+            type: "BRUME_RESOLVE",
+            requestId: raw.requestId,
+            ok: false,
+            error: walletError(
+              4002,
+              `This app wants ${raw.payload.chain}, but Brume is on ${walletChain}. Switch network in Brume Settings.`,
+            ),
+          });
+          sendResponse({ ok: true });
+          return;
+        }
+        signQueue.enqueue({
+          id: crypto.randomUUID(),
+          dappRequestId: raw.requestId,
+          kind: "transaction",
+          origin,
+          tabId,
+          serializedTransaction: raw.payload.serializedTransaction,
+          send: { skipPreflight: raw.payload.skipPreflight === true },
+        });
+        updateBadge();
+        void openApprovalWindow();
+        sendResponse({ ok: true });
+        return;
+      }
+
       case "DAPP_SIGN_TRANSACTION": {
         let tabId: number;
         let origin: string;
@@ -2129,16 +2259,7 @@ async function handleMessage(
         }
         const p = await getVaultOrThrow();
         const active = getActiveAccountEntry(p);
-        if (!sessionKeypair) {
-          await notifyTab(tabId, {
-            type: "BRUME_RESOLVE",
-            requestId: raw.requestId,
-            ok: false,
-            error: walletError(WalletErrorCodes.WalletNotReady, "Wallet locked"),
-          });
-          sendResponse({ ok: true });
-          return;
-        }
+        // A locked wallet still queues the request: the approval window shows Unlock first.
         if (!active.connectedOrigins[origin]) {
           await notifyTab(tabId, {
             type: "BRUME_RESOLVE",
@@ -2178,16 +2299,7 @@ async function handleMessage(
         }
         const p = await getVaultOrThrow();
         const active = getActiveAccountEntry(p);
-        if (!sessionKeypair) {
-          await notifyTab(tabId, {
-            type: "BRUME_RESOLVE",
-            requestId: raw.requestId,
-            ok: false,
-            error: walletError(WalletErrorCodes.WalletNotReady, "Wallet locked"),
-          });
-          sendResponse({ ok: true });
-          return;
-        }
+        // A locked wallet still queues the request: the approval window shows Unlock first.
         if (!active.connectedOrigins[origin]) {
           await notifyTab(tabId, {
             type: "BRUME_RESOLVE",
@@ -2227,16 +2339,7 @@ async function handleMessage(
         }
         const p = await getVaultOrThrow();
         const active = getActiveAccountEntry(p);
-        if (!sessionKeypair) {
-          await notifyTab(tabId, {
-            type: "BRUME_RESOLVE",
-            requestId: raw.requestId,
-            ok: false,
-            error: walletError(WalletErrorCodes.WalletNotReady, "Wallet locked"),
-          });
-          sendResponse({ ok: true });
-          return;
-        }
+        // A locked wallet still queues the request: the approval window shows Unlock first.
         if (!active.connectedOrigins[origin]) {
           await notifyTab(tabId, {
             type: "BRUME_RESOLVE",
@@ -2280,7 +2383,9 @@ async function handleMessage(
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  void handleMessage(message as ExtensionMessage, sender, sendResponse);
+  void handleMessage(message as ExtensionMessage, sender, sendResponse).finally(
+    () => void syncSessionStore(),
+  );
   return true;
 });
 

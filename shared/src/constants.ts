@@ -40,7 +40,8 @@ export type NetworkId = keyof typeof NETWORKS;
 
 export const DEFAULT_NETWORK: NetworkId = "devnet";
 
-export const DEFAULT_BRUME_API_ORIGIN = "http://localhost:3000";
+// Production API. The wallet overrides it for local dev with VITE_BRUME_API_ORIGIN.
+export const DEFAULT_BRUME_API_ORIGIN = "https://brume.cash";
 
 export const SOL_WRAPPED_MINT =
   "So11111111111111111111111111111111111111112" as const;

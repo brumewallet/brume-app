@@ -1,0 +1,53 @@
+# Uptime check for the API the wallet depends on. GitHub runs scheduled jobs
+# on a best-effort basis (often a few minutes late), which is enough for a beta.
+# On failure it opens one "API down" issue (GitHub emails watchers) and closes it on recovery.
+name: API health
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check /api/health
+        id: health
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o body.json -w '%{http_code}' --max-time 20 https://brume.cash/api/health || echo 000)
+            if [ "$code" = "200" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+            sleep 20
+          done
+          echo "ok=false" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          cat body.json || true
+
+      - name: Open or update outage issue
+        if: steps.health.outputs.ok == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="Health check failed with HTTP ${{ steps.health.outputs.code }} at $(date -u +%FT%TZ).
+          Response: \`$(head -c 500 body.json 2>/dev/null)\`
+          Runbook: RUNBOOK.md"
+          existing=$(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "API down in:title" --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" -R "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create -R "$GITHUB_REPOSITORY" --title "API down: brume.cash/api/health" --body "$body"
+          fi
+          exit 1
+
+      - name: Close outage issue on recovery
+        if: steps.health.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "API down in:title" --json number -q '.[].number'); do
+            gh issue close "$n" -R "$GITHUB_REPOSITORY" --comment "Recovered at $(date -u +%FT%TZ)."
+          done

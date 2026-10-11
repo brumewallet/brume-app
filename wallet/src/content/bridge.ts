@@ -10,6 +10,8 @@ function toExtensionMessage(data: {
   serializedTransaction?: string;
   serializedTransactions?: string[];
   message?: string;
+  chain?: string;
+  skipPreflight?: boolean;
 }): ExtensionMessage | null {
   const rid = data.requestId;
   switch (data.method) {
@@ -24,6 +26,16 @@ function toExtensionMessage(data: {
         type: "DAPP_SIGN_TRANSACTION",
         requestId: rid,
         payload: { serializedTransaction: data.serializedTransaction ?? "" },
+      };
+    case "signAndSendTransaction":
+      return {
+        type: "DAPP_SIGN_AND_SEND_TRANSACTION",
+        requestId: rid,
+        payload: {
+          serializedTransaction: data.serializedTransaction ?? "",
+          chain: typeof data.chain === "string" ? data.chain : undefined,
+          skipPreflight: data.skipPreflight === true,
+        },
       };
     case "signAllTransactions":
       return {
@@ -53,6 +65,8 @@ window.addEventListener("message", (ev: MessageEvent) => {
     serializedTransaction?: string;
     serializedTransactions?: string[];
     message?: string;
+    chain?: string;
+    skipPreflight?: boolean;
   };
   if (d.channel !== TO_CONTENT || !d.requestId || !d.method) return;
 
@@ -62,6 +76,8 @@ window.addEventListener("message", (ev: MessageEvent) => {
     serializedTransaction: d.serializedTransaction,
     serializedTransactions: d.serializedTransactions,
     message: d.message,
+    chain: d.chain,
+    skipPreflight: d.skipPreflight,
   });
   if (!msg) return;
 
@@ -71,11 +87,16 @@ window.addEventListener("message", (ev: MessageEvent) => {
 chrome.runtime.onMessage.addListener(
   (msg: {
     type?: string;
+    event?: string;
     requestId?: string;
     ok?: boolean;
     result?: unknown;
     error?: { code: number; message: string };
   }) => {
+    if (msg?.type === "BRUME_EVENT" && msg.event === "accountsChanged") {
+      window.postMessage({ channel: FROM_CONTENT, event: msg.event }, "*");
+      return;
+    }
     if (msg?.type !== "BRUME_RESOLVE" || !msg.requestId) return;
     window.postMessage(
       {

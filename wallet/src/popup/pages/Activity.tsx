@@ -141,12 +141,8 @@ export function Activity() {
           <AlertDescription className="space-y-2 text-xs text-amber-100/85">
             {/Brume API|Failed to fetch|NetworkError|localhost/i.test(rpcErr) ? (
               <p>
-                The Brume Next.js API is not reachable (see{" "}
-                <code className="rounded bg-black/20 px-1">
-                  DEFAULT_BRUME_API_ORIGIN
-                </code>{" "}
-                in shared constants). Start the API on port 3001 or point the
-                constant at your deployment.
+                The Brume service is not reachable. Your funds are safe. Try
+                again in a moment.
               </p>
             ) : (
               <p>RPC or network issue. Check Settings → RPC if you use a custom endpoint.</p>

@@ -46,6 +46,7 @@ describe("registerStandardWallet", () => {
         "standard:connect",
         "standard:events",
         "standard:disconnect",
+        "solana:signAndSendTransaction",
         "solana:signTransaction",
         "solana:signMessage",
       ]),
@@ -105,6 +106,32 @@ describe("registerStandardWallet", () => {
       serializedTransactions: [toB64(tx1), toB64(tx2)],
     });
     expect(two.map((o: { signedTransaction: Uint8Array }) => o.signedTransaction)).toEqual([tx1, tx2]);
+  });
+
+  it("signAndSend asks the wallet to broadcast and returns the signature bytes", async () => {
+    const tx = new Uint8Array([9, 9]);
+    const sig = new Uint8Array(64).fill(3);
+    const post = vi.fn(async (method: string) => {
+      if (method === "connect") return { publicKey: ADDRESS };
+      if (method === "signAndSendTransaction") return { signature: encodeBase58(sig) };
+      throw new Error(method);
+    });
+    const { wallet } = setup(post);
+    const [account] = (await wallet.features["standard:connect"].connect()).accounts;
+
+    const out = await wallet.features["solana:signAndSendTransaction"].signAndSendTransaction({
+      account,
+      transaction: tx,
+      chain: "solana:devnet",
+      options: { skipPreflight: true },
+    });
+
+    expect(post).toHaveBeenCalledWith("signAndSendTransaction", {
+      serializedTransaction: toB64(tx),
+      chain: "solana:devnet",
+      skipPreflight: true,
+    });
+    expect(out[0].signature).toEqual(sig);
   });
 
   it("refuses to sign for an account that is not connected", async () => {

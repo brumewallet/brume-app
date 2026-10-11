@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
-
+import { networkFromParam, rpcUrlFromParam } from "@/lib/rpc";
 
 const HELIUS_KEY = process.env.HELIUS_API_KEY ?? "";
-console.log("[api/nfts] HELIUS_KEY loaded:", HELIUS_KEY ? `${HELIUS_KEY.slice(0, 8)}…` : "(empty)");
 
 function heliusRpc(network: string): string | null {
   if (!HELIUS_KEY) return null;
@@ -26,7 +24,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const owner = searchParams.get("owner");
   const network = networkFromParam(searchParams.get("network"));
-  const rpcUrl = heliusRpc(network) ?? searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
+  const rpcUrl = heliusRpc(network) ?? rpcUrlFromParam(searchParams.get("rpcUrl"), network);
 
   if (!owner) return NextResponse.json({ error: "owner required" }, { status: 400 });
 

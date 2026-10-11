@@ -5,8 +5,18 @@ import { crx } from "@crxjs/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import manifest from "./manifest.json";
 
-export default defineConfig({
-  plugins: [tailwindcss(), react(), crx({ manifest })],
+// Dev builds also talk to a local API (VITE_BRUME_API_ORIGIN=http://localhost:3000).
+// Release builds get only the hosts in manifest.json.
+function manifestFor(mode: string) {
+  if (mode !== "development") return manifest;
+  return {
+    ...manifest,
+    host_permissions: [...manifest.host_permissions, "http://localhost/*", "http://127.0.0.1/*"],
+  };
+}
+
+export default defineConfig(({ mode }) => ({
+  plugins: [tailwindcss(), react(), crx({ manifest: manifestFor(mode) })],
   define: {
     global: "globalThis",
     "process.env.NODE_ENV": JSON.stringify(
@@ -24,4 +34,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ["buffer", "@solana/web3.js"],
   },
-});
+}));

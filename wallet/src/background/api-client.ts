@@ -1,9 +1,9 @@
-import { DEFAULT_BRUME_API_ORIGIN } from "@/shared/constants";
+import { BRUME_API_ORIGIN } from "@/shared/api-origin";
 import type { NetworkId } from "@/shared/constants";
 import type { PortfolioTokenRow } from "@brume/shared";
 
 export function getBrumeApiOrigin(): string {
-  return DEFAULT_BRUME_API_ORIGIN.replace(/\/$/, "");
+  return BRUME_API_ORIGIN;
 }
 
 function buildUrl(

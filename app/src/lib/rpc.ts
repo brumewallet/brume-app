@@ -1,4 +1,4 @@
-import { NETWORKS, isNetworkId, type NetworkId } from "@brume/shared";
+import { NETWORKS, isNetworkId, isPublicHttpsUrl, type NetworkId } from "@brume/shared";
 
 const ENV_RPC: Record<NetworkId, string | undefined> = {
   devnet: process.env.DEVNET_RPC_URL,
@@ -13,6 +13,11 @@ export function networkFromParam(value: string | null): NetworkId {
 // Server-side RPC for a network: env override (e.g. a paid provider), else the shared default.
 export function defaultRpcUrl(network: NetworkId): string {
   return ENV_RPC[network]?.trim() || NETWORKS[network].rpc;
+}
+
+// RPC for a read route: the wallet's custom RPC when it is a public HTTPS URL, else the default.
+export function rpcUrlFromParam(value: string | null, network: NetworkId): string {
+  return value && isPublicHttpsUrl(value) ? value : defaultRpcUrl(network);
 }
 
 // Upstream for the extension's /api/rpc proxy: env override, else Helius on mainnet when a key is set, else the shared default.

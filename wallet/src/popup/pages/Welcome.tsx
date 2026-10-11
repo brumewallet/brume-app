@@ -86,9 +86,9 @@ export function Welcome() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ ease, duration: 0.55, delay: 0.14 }}
         >
-          Public is the feature
+          The wallet that tells you
           <br />
-          <span className="text-primary">you opt into.</span>
+          <span className="text-primary">what is public.</span>
         </motion.h1>
 
         <motion.p
@@ -97,9 +97,9 @@ export function Welcome() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ ease, duration: 0.5, delay: 0.22 }}
         >
-          Privacy and control, built into the core,
+          Shield funds into a vault only your key controls.
           <br />
-          not bolted on.
+          See exactly what stays visible on-chain.
         </motion.p>
       </div>
 

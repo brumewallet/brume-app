@@ -54,7 +54,7 @@ export function ApproveSign() {
         </div>
         <div>
           <h1 className="text-xl font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
-            Confirm transaction
+            {p.kind === "message" ? "Sign message" : p.send ? "Confirm and send" : "Confirm transaction"}
           </h1>
           <p className="break-all text-[11px] text-muted-foreground">{p.origin}</p>
         </div>
@@ -94,7 +94,7 @@ export function ApproveSign() {
           disabled={busy}
           onClick={() => void approve()}
         >
-          Sign
+          {p.send ? "Sign and send" : "Sign"}
         </Button>
       </div>
     </motion.div>

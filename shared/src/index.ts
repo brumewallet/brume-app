@@ -6,3 +6,4 @@ export * from "./portfolio-fiat";
 export * from "./activity-format";
 export * from "./portfolio-types";
 export * from "./activity-types";
+export * from "./rpc-url";

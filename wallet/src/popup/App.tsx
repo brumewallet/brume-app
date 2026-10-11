@@ -72,10 +72,13 @@ function GuardLayout() {
 
   const path = location.pathname;
 
-  if (state.pendingConnect && path !== "/approve-connect") {
+  // Unlock comes before any dApp approval: signing needs the unlocked key.
+  const unlockFirst = state.hasVault && state.locked;
+
+  if (!unlockFirst && state.pendingConnect && path !== "/approve-connect") {
     return <Navigate to="/approve-connect" replace />;
   }
-  if (state.pendingSign && path !== "/approve-sign") {
+  if (!unlockFirst && state.pendingSign && path !== "/approve-sign") {
     return <Navigate to="/approve-sign" replace />;
   }
 

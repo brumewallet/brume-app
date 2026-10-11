@@ -207,6 +207,11 @@ export type ExtensionMessage =
       payload: { serializedTransaction: string };
     }
   | {
+      type: "DAPP_SIGN_AND_SEND_TRANSACTION";
+      requestId: string;
+      payload: { serializedTransaction: string; chain?: string; skipPreflight?: boolean };
+    }
+  | {
       type: "DAPP_SIGN_ALL_TRANSACTIONS";
       requestId: string;
       payload: { serializedTransactions: string[] };
@@ -277,6 +282,8 @@ export interface PendingSignRequest {
 
   serializedTransaction?: string;
   serializedTransactions?: string[];
+  // Wallet Standard signAndSendTransaction: broadcast after signing, return the signature.
+  send?: { skipPreflight: boolean };
     // Base64 message bytes
 
   message?: string;

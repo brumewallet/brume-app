@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { NextResponse } from "next/server";
-import { defaultRpcUrl, networkFromParam } from "@/lib/rpc";
+import { networkFromParam, rpcUrlFromParam } from "@/lib/rpc";
 
 
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const network = networkFromParam(searchParams.get("network"));
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
-  const rpcUrl = searchParams.get("rpcUrl") ?? defaultRpcUrl(network);
+  const rpcUrl = rpcUrlFromParam(searchParams.get("rpcUrl"), network);
 
   if (!address) {
     return NextResponse.json({ error: "address is required" }, { status: 400 });

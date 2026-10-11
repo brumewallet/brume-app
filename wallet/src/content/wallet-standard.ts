@@ -7,7 +7,11 @@ type Post = (method: string, extra?: Record<string, unknown>) => Promise<unknown
 
 type Chain = "solana:mainnet" | "solana:devnet";
 const CHAINS: readonly Chain[] = ["solana:mainnet", "solana:devnet"];
-const ACCOUNT_FEATURES = ["solana:signTransaction", "solana:signMessage"] as const;
+const ACCOUNT_FEATURES = [
+  "solana:signAndSendTransaction",
+  "solana:signTransaction",
+  "solana:signMessage",
+] as const;
 
 const MARK_PATH =
   "M200 332.046C200 265.747 253.726 212 320 212H484.36V320.316C477.732 387.043 427.038 440.813 361.773 452.141C355.696 453.196 351 458.31 351 464.481V473.992C351 480.163 355.696 485.276 361.773 486.331C423.486 497.044 472.171 545.703 482.892 607.382C483.948 613.461 489.06 618.157 495.228 618.157H504.77C510.937 618.157 516.049 613.461 517.105 607.382C527.826 545.703 576.513 497.044 638.227 486.331C644.304 485.276 649 480.163 649 473.992V464.481C649 458.31 644.304 453.196 638.227 452.141C572.961 440.813 522.265 387.043 515.637 320.316V212H680C746.274 212 800 265.747 800 332.046V547.908C800 588.045 779.948 625.528 746.564 647.792L566.564 767.838C526.257 794.721 473.743 794.721 433.436 767.838L253.437 647.792C220.053 625.528 200 588.046 200 547.908V332.046Z";
@@ -104,6 +108,31 @@ export function registerStandardWallet(io: Io): StandardBridge {
           return () => {
             listeners.delete(listener);
           };
+        },
+      },
+      "solana:signAndSendTransaction": {
+        version: "1.0.0" as const,
+        supportedTransactionVersions: ["legacy", 0] as const,
+        async signAndSendTransaction(
+          ...inputs: {
+            account: { address: string };
+            transaction: Uint8Array;
+            chain?: string;
+            options?: { skipPreflight?: boolean };
+          }[]
+        ) {
+          inputs.forEach((i) => requireAccount(i.account.address));
+          // One approval per transaction, sent in order: later ones may depend on earlier ones.
+          const outputs: { signature: Uint8Array }[] = [];
+          for (const i of inputs) {
+            const out = (await io.post("signAndSendTransaction", {
+              serializedTransaction: io.toB64(i.transaction),
+              chain: i.chain,
+              skipPreflight: i.options?.skipPreflight === true,
+            })) as { signature: string };
+            outputs.push({ signature: decodeBase58(out.signature) });
+          }
+          return outputs;
         },
       },
       "solana:signTransaction": {

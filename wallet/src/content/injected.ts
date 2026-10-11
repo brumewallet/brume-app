@@ -37,7 +37,12 @@ window.addEventListener("message", (ev: MessageEvent) => {
     ok?: boolean;
     result?: unknown;
     error?: { code: number; message: string };
+    event?: string;
   };
+  if (d.channel === FROM_CONTENT && d.event === "accountsChanged") {
+    void onAccountsChanged();
+    return;
+  }
   if (d.channel !== FROM_CONTENT || !d.requestId) return;
   const p = pending.get(d.requestId);
   if (!p) return;
@@ -171,6 +176,22 @@ declare global {
   interface Window {
     brume?: typeof brume;
     solana?: typeof brume;
+  }
+}
+
+// The user switched account, removed one, or revoked this site in Brume.
+async function onAccountsChanged(): Promise<void> {
+  if (!brume.publicKey) return;
+  try {
+    const res = (await post("getAccounts")) as { accounts: string[] };
+    const next = res.accounts[0] ?? null;
+    if (next === brume.publicKey?.toBase58()) return;
+    brume.publicKey = next ? pkObj(next) : null;
+    emit("accountChanged", brume.publicKey);
+    if (!next) emit("disconnect");
+    standard.setAddress(next);
+  } catch {
+    // ignore: the page keeps its last known account
   }
 }
 

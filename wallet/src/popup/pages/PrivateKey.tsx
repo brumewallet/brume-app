@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { Check } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { PasswordInput } from "../components/PasswordInput";
 import * as msg from "../messaging";
 import { useWalletStore } from "../store";
 import { cn } from "@/lib/utils";
@@ -26,17 +27,19 @@ export function PrivateKey() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
   const { copied, copy } = useCopyToClipboard(secret, { ms: 1500 });
 
   const isActive = acc && state && acc.id === state.activeAccountId;
 
   async function reveal() {
-    if (!isActive) return;
+    if (!isActive || !password) return;
     setErr(null);
     setBusy(true);
     try {
-      const r = await msg.exportSecret();
+      const r = await msg.exportSecret(password);
       setSecret(r.secretKeyBase64);
+      setPassword("");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not export key");
     } finally {
@@ -110,15 +113,28 @@ export function PrivateKey() {
           animate={{ opacity: 1 }}
           transition={stepCrossfade}
         >
-          {err ? <p className="text-xs text-destructive">{err}</p> : null}
-          <Button
-            type="button"
-            className="h-12 rounded-2xl text-[15px]"
-            disabled={busy}
-            onClick={() => void reveal()}
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void reveal();
+            }}
           >
-            {busy ? "…" : "Reveal private key"}
-          </Button>
+            <PasswordInput
+              value={password}
+              onChange={setPassword}
+              placeholder="Enter your password"
+              autoFocus
+            />
+            {err ? <p className="text-xs text-destructive">{err}</p> : null}
+            <Button
+              type="submit"
+              className="h-12 rounded-2xl text-[15px]"
+              disabled={busy || !password}
+            >
+              {busy ? "…" : "Reveal private key"}
+            </Button>
+          </form>
         </motion.div>
       ) : null}
 

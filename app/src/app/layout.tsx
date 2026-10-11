@@ -18,11 +18,11 @@ const sans = Onest({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://brume.cash"),
-  title: "Brume: Public is the feature you opt into",
+  title: "Brume: The wallet that tells you what is public",
   description:
     "A Solana wallet with a shielded balance only your key controls, dApp connect, and a plain disclosure of what stays visible on-chain.",
   openGraph: {
-    title: "Brume: Public is the feature you opt into",
+    title: "Brume: The wallet that tells you what is public",
     description:
       "A Solana wallet with a shielded balance only your key controls, and a plain disclosure of what stays visible on-chain.",
     siteName: "Brume",

@@ -1,7 +1,10 @@
 import type { StoredKeystore } from "./types";
 import { bytesToHex, hexToBytes, randomBytes } from "./crypto";
 
-const PBKDF2_ITERATIONS = 100_000;
+// OWASP 2023 guidance for PBKDF2-HMAC-SHA256. Keystores record their own count,
+// so wallets created with the old 100k value still decrypt.
+const PBKDF2_ITERATIONS = 600_000;
+const LEGACY_PBKDF2_ITERATIONS = 100_000;
 
 function encoder(): TextEncoder {
   return new TextEncoder();
@@ -10,6 +13,7 @@ function encoder(): TextEncoder {
 async function deriveAesKey(
   password: string,
   salt: Uint8Array,
+  iterations: number,
 ): Promise<CryptoKey> {
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
@@ -22,7 +26,7 @@ async function deriveAesKey(
     {
       name: "PBKDF2",
       salt,
-      iterations: PBKDF2_ITERATIONS,
+      iterations,
       hash: "SHA-256",
     },
     keyMaterial,
@@ -39,7 +43,7 @@ export async function encryptSecretKey(
 ): Promise<StoredKeystore> {
   const salt = randomBytes(16);
   const iv = randomBytes(12);
-  const aesKey = await deriveAesKey(password, salt);
+  const aesKey = await deriveAesKey(password, salt, PBKDF2_ITERATIONS);
 
   const ciphertextBuf = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
@@ -82,7 +86,10 @@ export async function decryptSecretKey(
   combined.set(cipherBody, 0);
   combined.set(authTag, cipherBody.length);
 
-  const aesKey = await deriveAesKey(password, salt);
+  const stored = keystore.crypto.kdfparams.iterations;
+  const iterations =
+    Number.isInteger(stored) && stored >= LEGACY_PBKDF2_ITERATIONS ? stored : LEGACY_PBKDF2_ITERATIONS;
+  const aesKey = await deriveAesKey(password, salt, iterations);
   const plain = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv },
     aesKey,

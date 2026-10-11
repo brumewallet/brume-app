@@ -456,12 +456,12 @@ export function disconnectSite(origin: string) {
   });
 }
 
-export function exportSecret(password?: string) {
+export function exportSecret(password: string) {
   const requestId = crypto.randomUUID();
   return sendMessage<{ secretKeyBase64: string }>({
     type: "EXPORT_SECRET",
     requestId,
-    payload: password !== undefined ? { password } : {},
+    payload: { password },
   });
 }
 

@@ -81,7 +81,7 @@ export function Dashboard() {
         <Alert className="rounded-2xl border-rose-500/35 bg-rose-500/10 text-rose-100">
           <AlertTitle className="text-rose-100">Brume API unreachable</AlertTitle>
           <AlertDescription className="text-xs text-rose-100/85">
-            SPL names, logos, and activity come from the Next.js app at localhost:3000.
+            Token names, logos, and activity could not load. Your funds are safe. Try again in a moment.
           </AlertDescription>
           <p className="mt-2 line-clamp-3 font-mono text-[10px] text-rose-200/90">{state.indexerError}</p>
           <Button type="button" size="sm" className="mt-3 h-8 rounded-xl text-xs" onClick={() => void msg.refreshBalanceFromChain().then(() => refresh())}>
