@@ -20,11 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://brume.cash"),
   title: "Brume: Public is the feature you opt into",
   description:
-    "A privacy-first Solana wallet. Shielded transfers and policy-bound agents, built into the core, not bolted on. Sovereignty through silence.",
+    "A Solana wallet with a shielded balance only your key controls, dApp connect, and a plain disclosure of what stays visible on-chain.",
   openGraph: {
     title: "Brume: Public is the feature you opt into",
     description:
-      "A privacy-first Solana wallet. Shielded transfers and policy-bound agents, built into the core.",
+      "A Solana wallet with a shielded balance only your key controls, and a plain disclosure of what stays visible on-chain.",
     siteName: "Brume",
     type: "website",
   },

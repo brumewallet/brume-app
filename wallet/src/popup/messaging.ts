@@ -1,9 +1,35 @@
 import type { ExplorerId } from "@/shared/constants";
 import type { ExtensionMessage, WalletUiState } from "@/shared/types";
+import { track } from "./lib/analytics";
 
 type BgResponse =
   | { ok: true; payload?: unknown }
   | { ok: false; error: { code: number; message: string } };
+
+// Sends the event only when the background call succeeds.
+function tracked<T>(
+  p: Promise<T>,
+  event: string,
+  props?: Parameters<typeof track>[1],
+): Promise<T> {
+  return p.then((r) => {
+    track(event, props);
+    return r;
+  });
+}
+
+// A password means a new vault (onboarding). No password means an extra account.
+function trackWalletAdded<T>(
+  p: Promise<T>,
+  method: "create" | "import_seed" | "import_key",
+  password?: string,
+): Promise<T> {
+  return tracked(
+    p,
+    password !== undefined ? "onboarding_completed" : "account_added",
+    { method },
+  );
+}
 
 function sendMessage<T>(msg: ExtensionMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -61,34 +87,46 @@ export function setAutoLockTimeout(minutes: number): Promise<{ minutes: number }
 
 export function createWallet(mnemonic: string, password?: string) {
   const requestId = crypto.randomUUID();
-  return sendMessage<{ publicKey: string }>({
-    type: "CREATE_WALLET",
-    requestId,
-    payload:
-      password !== undefined ? { mnemonic, password } : { mnemonic },
-  });
+  return trackWalletAdded(
+    sendMessage<{ publicKey: string }>({
+      type: "CREATE_WALLET",
+      requestId,
+      payload:
+        password !== undefined ? { mnemonic, password } : { mnemonic },
+    }),
+    "create",
+    password,
+  );
 }
 
 export function importWallet(mnemonic: string, password?: string) {
   const requestId = crypto.randomUUID();
-  return sendMessage<{ publicKey: string }>({
-    type: "IMPORT_WALLET",
-    requestId,
-    payload:
-      password !== undefined ? { mnemonic, password } : { mnemonic },
-  });
+  return trackWalletAdded(
+    sendMessage<{ publicKey: string }>({
+      type: "IMPORT_WALLET",
+      requestId,
+      payload:
+        password !== undefined ? { mnemonic, password } : { mnemonic },
+    }),
+    "import_seed",
+    password,
+  );
 }
 
 export function importPrivateKey(secretKeyInput: string, password?: string) {
   const requestId = crypto.randomUUID();
-  return sendMessage<{ publicKey: string }>({
-    type: "IMPORT_PRIVATE_KEY",
-    requestId,
-    payload:
-      password !== undefined
-        ? { secretKeyInput, password }
-        : { secretKeyInput },
-  });
+  return trackWalletAdded(
+    sendMessage<{ publicKey: string }>({
+      type: "IMPORT_PRIVATE_KEY",
+      requestId,
+      payload:
+        password !== undefined
+          ? { secretKeyInput, password }
+          : { secretKeyInput },
+    }),
+    "import_key",
+    password,
+  );
 }
 
 export function addHdAccount() {
@@ -102,11 +140,14 @@ export function addHdAccount() {
 
 export function unlock(password: string) {
   const requestId = crypto.randomUUID();
-  return sendMessage<{ publicKey: string }>({
-    type: "UNLOCK",
-    requestId,
-    payload: { password },
-  });
+  return tracked(
+    sendMessage<{ publicKey: string }>({
+      type: "UNLOCK",
+      requestId,
+      payload: { password },
+    }),
+    "wallet_unlocked",
+  );
 }
 
 export function switchAccount(accountId: string) {
@@ -206,14 +247,18 @@ export function refreshBalanceFromChain() {
 
 export function sendSol(to: string, sol: string) {
   const requestId = crypto.randomUUID();
-  return sendMessage<{
-    signature: string;
-    solSendRoute: "private" | "standard";
-  }>({
-    type: "SEND_SOL",
-    requestId,
-    payload: { to, sol },
-  });
+  return tracked(
+    sendMessage<{
+      signature: string;
+      solSendRoute: "private" | "standard";
+    }>({
+      type: "SEND_SOL",
+      requestId,
+      payload: { to, sol },
+    }),
+    "send_succeeded",
+    { asset: "sol" },
+  );
 }
 
 export function sendSpl(
@@ -223,21 +268,25 @@ export function sendSpl(
   opts?: { fromPrivateBalance?: boolean },
 ) {
   const requestId = crypto.randomUUID();
-  return sendMessage<{
-    signature: string;
-    splSendRoute: "private" | "standard";
-  }>({
-    type: "SEND_SPL",
-    requestId,
-    payload: {
-      mint,
-      to,
-      amount,
-      ...(opts?.fromPrivateBalance === true
-        ? { fromPrivateBalance: true }
-        : {}),
-    },
-  });
+  return tracked(
+    sendMessage<{
+      signature: string;
+      splSendRoute: "private" | "standard";
+    }>({
+      type: "SEND_SPL",
+      requestId,
+      payload: {
+        mint,
+        to,
+        amount,
+        ...(opts?.fromPrivateBalance === true
+          ? { fromPrivateBalance: true }
+          : {}),
+      },
+    }),
+    "send_succeeded",
+    { asset: "spl", mint, from_shielded: opts?.fromPrivateBalance === true },
+  );
 }
 
 export function burnSpl(mint: string, amount: string) {
@@ -340,11 +389,13 @@ export function shieldSpl(
   amount: string,
 ) {
   const requestId = crypto.randomUUID();
-  return sendMessage<{ signature: string }>({
+  const p = sendMessage<{ signature: string }>({
     type: "SHIELD_SPL",
     requestId,
     payload: { mode, mint, amount },
   });
+  p.catch(() => track(`${mode}_failed`, { mint }));
+  return tracked(p, `${mode}_succeeded`, { mint });
 }
 
 export function requestAirdrop() {
@@ -416,11 +467,14 @@ export function exportSecret(password?: string) {
 
 export function approveConnect(connectRequestId: string) {
   const requestId = crypto.randomUUID();
-  return sendMessage({
-    type: "POPUP_APPROVE_CONNECT",
-    requestId,
-    payload: { connectRequestId },
-  });
+  return tracked(
+    sendMessage({
+      type: "POPUP_APPROVE_CONNECT",
+      requestId,
+      payload: { connectRequestId },
+    }),
+    "dapp_connect_approved",
+  );
 }
 
 export function rejectConnect(connectRequestId: string) {
@@ -434,11 +488,14 @@ export function rejectConnect(connectRequestId: string) {
 
 export function approveSign(approvalId: string) {
   const requestId = crypto.randomUUID();
-  return sendMessage({
-    type: "POPUP_APPROVE_SIGN",
-    requestId,
-    payload: { approvalId },
-  });
+  return tracked(
+    sendMessage({
+      type: "POPUP_APPROVE_SIGN",
+      requestId,
+      payload: { approvalId },
+    }),
+    "dapp_sign_approved",
+  );
 }
 
 export function rejectSign(approvalId: string) {

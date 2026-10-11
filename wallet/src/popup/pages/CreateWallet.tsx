@@ -17,6 +17,7 @@ import { PasswordInput } from "../components/PasswordInput";
 import { SeedPhraseGrid } from "../components/SeedPhraseGrid";
 import * as msg from "../messaging";
 import { useWalletStore } from "../store";
+import { NO_CAPTURE_CLASS } from "../lib/analytics";
 
 export function CreateWallet() {
   const navigate = useNavigate();
@@ -105,7 +106,7 @@ export function CreateWallet() {
 
   return (
     <motion.div
-      className="flex min-h-[600px] flex-col gap-4 bg-background p-6"
+      className={`${NO_CAPTURE_CLASS} flex min-h-[600px] flex-col gap-4 bg-background p-6`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 22 }}

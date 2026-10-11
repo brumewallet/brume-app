@@ -9,6 +9,7 @@ import { PasswordInput } from "../components/PasswordInput";
 import { cn } from "@/lib/utils";
 import * as msg from "../messaging";
 import { useWalletStore } from "../store";
+import { NO_CAPTURE_CLASS } from "../lib/analytics";
 
 const spring = { type: "spring", stiffness: 260, damping: 20 } as const;
 
@@ -65,7 +66,7 @@ export function ImportPrivateKey() {
 
   return (
     <motion.div
-      className="flex min-h-[600px] flex-col gap-4 bg-background p-6"
+      className={`${NO_CAPTURE_CLASS} flex min-h-[600px] flex-col gap-4 bg-background p-6`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={spring}

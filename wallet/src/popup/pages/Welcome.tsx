@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { analyticsAvailable, readConsent, setConsent } from "../lib/analytics";
 
 const spring = { type: "spring", stiffness: 160, damping: 18, mass: 1 } as const;
 const ease = [0.32, 0.72, 0, 1] as const;
@@ -21,6 +23,35 @@ function BrumeLogoMark({ size = 44 }: { size?: number }) {
         fill="currentColor"
       />
     </svg>
+  );
+}
+
+function BetaConsent() {
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    void readConsent().then((c) => setChecked(c === "granted"));
+  }, []);
+
+  if (!analyticsAvailable()) return null;
+
+  return (
+    <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-left text-[11.5px] leading-[1.5] text-muted-foreground">
+      <input
+        type="checkbox"
+        className="mt-[3px] h-3.5 w-3.5 shrink-0 accent-primary"
+        checked={checked}
+        onChange={(e) => {
+          setChecked(e.target.checked);
+          void setConsent(e.target.checked ? "granted" : "denied");
+        }}
+      />
+      <span>
+        Help improve the beta: share usage events and screen recordings of
+        Brume. Seed phrases, private keys, and passwords are never recorded.
+        You can turn this off in Settings.
+      </span>
+    </label>
   );
 }
 
@@ -104,6 +135,7 @@ export function Welcome() {
             </Link>
           </motion.div>
         </div>
+        <BetaConsent />
       </motion.div>
     </div>
   );

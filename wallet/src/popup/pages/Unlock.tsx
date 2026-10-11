@@ -11,6 +11,7 @@ import { PasswordInput } from "../components/PasswordInput";
 import { requestUnlockConfetti } from "../components/UnlockConfettiHost";
 import * as msg from "../messaging";
 import { useWalletStore } from "../store";
+import { NO_CAPTURE_CLASS } from "../lib/analytics";
 
 function BrumeLogoMark({ size = 44 }: { size?: number }) {
   return (
@@ -62,7 +63,7 @@ export function Unlock() {
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto overflow-hidden bg-background px-5 py-6">
+    <div className={`${NO_CAPTURE_CLASS} relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto overflow-hidden bg-background px-5 py-6`}>
 
       <div className="relative flex w-full max-w-[300px] flex-col items-center">
         <motion.div

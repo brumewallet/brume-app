@@ -50,4 +50,5 @@ coverage/
 *.crx
 *.pem
 web-ext-artifacts/
+release/
 *.zip

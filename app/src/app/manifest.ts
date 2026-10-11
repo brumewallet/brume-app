@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Brume",
     short_name: "Brume",
     description:
-      "A privacy-first Solana wallet. Shielded transfers and policy-bound agents, built into the core.",
+      "A Solana wallet with a shielded balance only your key controls, and a plain disclosure of what stays visible on-chain.",
     start_url: "/",
     display: "standalone",
     theme_color: "#ffffff",

@@ -30,6 +30,7 @@ import { AnimatedOutlet } from "./components/AnimatedOutlet";
 import { MainShell } from "./components/MainShell";
 import { PopupErrorBoundary } from "./components/PopupErrorBoundary";
 import { JupiterPortfolioPricesProvider } from "./context/JupiterPortfolioPrices";
+import { setNetwork as setAnalyticsNetwork } from "./lib/analytics";
 import { useWalletStore } from "./store";
 
 function Loading() {
@@ -47,6 +48,10 @@ function GuardLayout() {
   useEffect(() => {
     void refresh();
   }, [refresh, location.pathname]);
+
+  useEffect(() => {
+    if (state?.network) setAnalyticsNetwork(state.network);
+  }, [state?.network]);
 
   useEffect(() => {
     const id = window.setInterval(() => {

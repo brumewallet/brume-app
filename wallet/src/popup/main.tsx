@@ -9,9 +9,15 @@ import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import "@/styles/globals.css";
 import { App } from "./App";
+import { initAnalytics } from "./lib/analytics";
 import { applyUiSurfaceClass, readUiSurface } from "./lib/ui-shell";
 
-void readUiSurface().then(applyUiSurfaceClass);
+// The dApp approval window is resizable, so it uses the fluid side-panel layout.
+const isApprovalWindow = new URLSearchParams(location.search).has("approval");
+
+void readUiSurface()
+  .then((surface) => applyUiSurfaceClass(isApprovalWindow ? "sidepanel" : surface))
+  .then(initAnalytics);
 
 const THEME_KEY = "brume:theme";
 const mq = window.matchMedia("(prefers-color-scheme: dark)");
