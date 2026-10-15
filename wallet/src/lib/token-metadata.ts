@@ -1,3 +1,4 @@
+import { mainnetMintAlias } from "@brume/shared";
 import type { NetworkId } from "@/shared/constants";
 import rawList from "@token-list/tokens/solana.tokenlist.json";
 
@@ -56,6 +57,9 @@ export function getTokenListEntry(
   if (network === "devnet") {
     const fallback = map.get(key(mint, 101));
     if (fallback) return fallback;
+    const alias = mainnetMintAlias(mint, network);
+    const aliased = alias ? map.get(key(alias, 101)) : undefined;
+    if (aliased) return aliased;
   }
   return null;
 }

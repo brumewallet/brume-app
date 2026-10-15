@@ -1,6 +1,7 @@
 import { BRUME_API_ORIGIN } from "@/shared/api-origin";
 import type { NetworkId } from "@/shared/constants";
 import type { PortfolioTokenRow } from "@brume/shared";
+import { getTokenListEntry } from "@/lib/token-metadata";
 
 export function getBrumeApiOrigin(): string {
   return BRUME_API_ORIGIN;
@@ -63,7 +64,23 @@ export async function fetchBrumePortfolio(
     const t = await res.text().catch(() => "");
     throw new Error(`Brume API ${res.status}${t ? `: ${t.slice(0, 160)}` : ""}`);
   }
-  return (await res.json()) as PortfolioApiResponse;
+  const body = (await res.json()) as PortfolioApiResponse;
+  if (body.tokens) body.tokens = body.tokens.map((t) => withTokenListMeta(t, network));
+  return body;
+}
+
+// The API has no metadata for devnet test mints; fill it from the bundled token list.
+function withTokenListMeta(row: PortfolioTokenRow, network: NetworkId): PortfolioTokenRow {
+  if (row.logoUri && row.verified) return row;
+  const entry = getTokenListEntry(row.mint, network);
+  if (!entry) return row;
+  return {
+    ...row,
+    symbol: row.verified ? row.symbol : entry.symbol,
+    name: row.verified ? row.name : entry.name,
+    logoUri: row.logoUri ?? entry.logoURI ?? null,
+    verified: true,
+  };
 }
 
 export interface ActivityApiResponse {

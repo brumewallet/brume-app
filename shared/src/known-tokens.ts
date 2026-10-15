@@ -24,3 +24,17 @@ export function knownTokenSymbol(
   if (!mint || !network) return null;
   return BY_NETWORK[network][mint] ?? null;
 }
+
+// Devnet test mints that stand in for mainnet tokens; metadata and logos come from the mainnet mint.
+const DEVNET_TO_MAINNET: Record<string, string> = {
+  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuS9GkuVFyiMKbPd: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+};
+
+export function mainnetMintAlias(
+  mint: string,
+  network: NetworkId | undefined,
+): string | null {
+  if (network !== "devnet") return null;
+  return DEVNET_TO_MAINNET[mint] ?? null;
+}

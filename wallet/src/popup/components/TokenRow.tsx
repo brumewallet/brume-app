@@ -84,15 +84,10 @@ export function TokenRow(props: {
       <TokenAvatar symbol={props.symbol} logoUri={props.logoUri} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-[15px] font-semibold text-foreground">{props.name}</span>
+          <span className="text-[15px] font-semibold text-foreground">{props.symbol}</span>
           {verified ? <VerifiedBadge /> : null}
         </div>
-        <p
-          className={cn("text-[13px] text-muted-foreground", hidden && "opacity-30")}
-          style={hidden ? { filter: `url(#${pixelSmId})`, userSelect: "none" } : undefined}
-        >
-          {formatTokenListAmount(display)} {props.symbol}
-        </p>
+        <p className="truncate text-[13px] text-muted-foreground">{props.name}</p>
       </div>
       <div className="shrink-0 text-right">
         {props.fiatUsdApprox != null ? (
@@ -105,6 +100,12 @@ export function TokenRow(props: {
         ) : (
           <p className="text-xs text-muted-foreground">-</p>
         )}
+        <p
+          className={cn("text-[13px] text-muted-foreground", hidden && "opacity-30")}
+          style={hidden ? { filter: `url(#${pixelSmId})`, userSelect: "none" } : undefined}
+        >
+          {formatTokenListAmount(display)} {props.symbol}
+        </p>
       </div>
     </>
   );

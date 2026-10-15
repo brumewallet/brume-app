@@ -2,6 +2,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";
 import { NextResponse } from "next/server";
+import { mainnetMintAlias } from "@brume/shared";
 import { networkFromParam, rpcUrlFromParam } from "@/lib/rpc";
 
 
@@ -93,7 +94,8 @@ export async function GET(request: Request) {
         const amountRaw: string = info.tokenAmount?.amount ?? "0";
         if (amountRaw === "0") return null;
 
-        const meta = tokenMap.get(mint);
+        const alias = mainnetMintAlias(mint, network);
+        const meta = tokenMap.get(mint) ?? (alias ? tokenMap.get(alias) : undefined);
         return {
           mint,
           symbol: meta?.symbol ?? mint.slice(0, 6),

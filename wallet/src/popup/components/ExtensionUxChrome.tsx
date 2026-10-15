@@ -1,3 +1,4 @@
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ExtensionSendSpinner({ className }: { className?: string }) {
@@ -20,13 +21,21 @@ export function ExtensionMascot({
   variant: "success" | "error";
   className?: string;
 }) {
-  const src =
-    variant === "success" ? "/hero-new/success.svg" : "/hero-new/error.svg";
+  const success = variant === "success";
+  const Icon = success ? Check : X;
   return (
-    <img
-      src={src}
-      alt={variant === "success" ? "Success" : "Error"}
-      className={cn("h-20 w-[100px] object-contain brume-mascot-nod", className)}
-    />
+    <div
+      role="img"
+      aria-label={success ? "Success" : "Error"}
+      className={cn(
+        "flex size-16 items-center justify-center rounded-full",
+        success
+          ? "bg-[color:var(--extension-accent)]/15 text-[color:var(--extension-accent)]"
+          : "bg-destructive/15 text-destructive",
+        className,
+      )}
+    >
+      <Icon className="size-8" strokeWidth={2.5} aria-hidden />
+    </div>
   );
 }

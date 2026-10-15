@@ -61,14 +61,18 @@ import * as earnService from "./earn-service";
 import { clearPersisted, loadVault, saveVault } from "./storage";
 import { clearSession, loadSession, saveSession } from "./session-store";
 import {
+  clearUiCache,
+  forgetUiCacheKeys,
   isPortfolioCacheFresh,
   isShieldBalancesCacheFresh,
+  purgeLegacyUiCache,
   readActivityCache,
   readBalanceCache,
   readNftCache,
   readPortfolioCache,
   readPortfolioCacheEntry,
   readShieldBalancesCacheEntry,
+  setUiCacheSecretKeyLookup,
   writeActivityCache,
   writeBalanceCache,
   writeNftCache,
@@ -157,6 +161,18 @@ let cachedNfts: NftItem[] | null = null;
 let cachedShieldedBalances: Record<string, string> | null = null;
 let lastRpcError: string | null = null;
 let lastIndexerError: string | null = null;
+
+// The UI cache is encrypted per account; its key exists only while that account is unlocked.
+setUiCacheSecretKeyLookup((address) => {
+  if (!unlockedKeypairs) return null;
+  for (const kp of unlockedKeypairs.values()) {
+    if (kp.publicKey.toBase58() === address) return kp.secretKey;
+  }
+  return null;
+});
+void purgeLegacyUiCache().catch((e) =>
+  console.error("[Brume] could not purge legacy UI cache", e),
+);
 
 // Session survives worker restarts through chrome.storage.session (see session-store.ts).
 let persistedSessionFingerprint = "";
@@ -262,6 +278,7 @@ function clearWalletSession(): void {
   sessionVaultPassword = null;
   unlockedKeypairs = null;
   lastActivityAt = 0;
+  forgetUiCacheKeys();
   clearWalletSessionCaches();
   void syncSessionStore();
 }
@@ -1111,6 +1128,7 @@ async function handleMessage(
         v.accounts.splice(idx, 1);
         if (v.accounts.length === 0) {
           await clearPersisted();
+          await clearUiCache();
           clearWalletSession();
           sendResponse({ ok: true });
           return;
